@@ -2,7 +2,7 @@ Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.o: \
  ../Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.c \
  ../Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.h \
  ../Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h \
- D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/MEMS/Target/iks01a2_conf.h \
+ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/stm32f4xx_hal_conf.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -45,7 +45,7 @@ Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.o: \
 
 ../Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h:
 
-D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/MEMS/Target/iks01a2_conf.h:
+D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h:
 
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 

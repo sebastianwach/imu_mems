@@ -66,7 +66,7 @@ void Thread2(void const * argument);
 /* USER CODE BEGIN PFP */
 static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_prec);
 void Init_Motion_Sensors();
-void Read_Sensors_Capabilities(uint32_t Instance);
+void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
 
@@ -83,57 +83,65 @@ void Init_Motion_Sensors()
 }
 
 
-void Read_Sensors_Capabilities(uint32_t Instance)
+void Read_Accelero_Sensor(uint32_t Instance)
 {
-	static IKS01A2_MOTION_SENSOR_Capabilities_t MotionCapabilities[IKS01A2_MOTION_INSTANCES_NBR];
-	char dataOut[MAX_BUF_SIZE];
 
-	displayFloatToInt_t out_value_odr;
-	int i;
-	/*Prototype*/
+	  float odr;
+	  int32_t fullScale;
+	  IKS01A2_MOTION_SENSOR_Axes_t acceleration;
+	  displayFloatToInt_t out_value;
+	  uint8_t whoami;
+	  char dataOut[MAX_BUF_SIZE];
 
 
-
-
-//	  IKS01A2_MOTION_SENSOR_Enable(Instance, MOTION_GYRO);
-
-	  for(i = 0; i < IKS01A2_MOTION_INSTANCES_NBR; i++)
+	  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_ACCELERO, &acceleration))
 	  {
-	    IKS01A2_MOTION_SENSOR_GetCapabilities(i, &MotionCapabilities[i]);
-	    snprintf(dataOut, MAX_BUF_SIZE,
-	             "\r\nMotion Sensor Instance %d capabilities: \r\n ACCELEROMETER: %d\r\n GYROSCOPE: %d\r\n MAGNETOMETER: %d\r\n",
-	             i, MotionCapabilities[i].Acc, MotionCapabilities[i].Gyro, MotionCapabilities[i].Magneto);
-	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
-
-//	    floatToInt(MotionCapabilities[i].AccMaxOdr, &out_value_odr, 3);
-//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX ACC ODR: %d.%03d Hz, MAX ACC FS: %d\r\n", (int)out_value_odr.out_int,
-//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].AccMaxFS);
-//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
-
-//	    floatToInt(MotionCapabilities[i].GyroMaxOdr, &out_value_odr, 3);
-//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX GYRO ODR: %d.%03d Hz, MAX GYRO FS: %d\r\n", (int)out_value_odr.out_int,
-//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].GyroMaxFS);
-//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
-//
-//	    floatToInt(MotionCapabilities[i].MagMaxOdr, &out_value_odr, 3);
-//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX MAG ODR: %d.%03d Hz, MAX MAG FS: %d\r\n", (int)out_value_odr.out_int,
-//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].MagMaxFS);
-//
-//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
-//	    printf("%s", dataOut);
+	    snprintf(dataOut, MAX_BUF_SIZE, "\r\nACC[%d]: Error\r\n", (int)Instance);
+	  }
+	  else
+	  {
+	    snprintf(dataOut, MAX_BUF_SIZE, "\r\nACC_X[%d]: %d, ACC_Y[%d]: %d, ACC_Z[%d]: %d\r\n", (int)Instance,
+	             (int)acceleration.x, (int)Instance, (int)acceleration.y, (int)Instance, (int)acceleration.z);
 	  }
 
-	/*END_OF_PROTOTYPE*/
-//	  float odr;
-//	  int32_t fullScale;
-//	  IKS01A2_MOTION_SENSOR_Axes_t acceleration;
-//	  uint8_t whoami;
-//
-//	  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, 2U, &acceleration))
-//	  {
-//	    snprintf(dataOut, MAX_BUF_SIZE, "\r\nACC[%d]: Error\r\n", (int)Instance);
-//	  }
-//	  HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 5);
+	  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+
+	    if (IKS01A2_MOTION_SENSOR_ReadID(Instance, &whoami))
+	    {
+	      snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: Error\r\n", (int)Instance);
+	    }
+	    else
+	    {
+	      snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: 0x%x\r\n", (int)Instance, (int)whoami);
+	    }
+
+	    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+	    if (IKS01A2_MOTION_SENSOR_GetOutputDataRate(Instance, MOTION_ACCELERO, &odr))
+	    {
+	      snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: ERROR\r\n", (int)Instance);
+	    }
+	    else
+	    {
+	      floatToInt(odr, &out_value, 3);
+	      snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: %d.%03d Hz\r\n", (int)Instance, (int)out_value.out_int,
+	               (int)out_value.out_dec);
+	    }
+
+	    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+	    if (IKS01A2_MOTION_SENSOR_GetFullScale(Instance, MOTION_ACCELERO, &fullScale))
+	    {
+	      snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: ERROR\r\n", (int)Instance);
+	    }
+	    else
+	    {
+	      snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: %d g\r\n", (int)Instance, (int)fullScale);
+	    }
+
+	    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
 }
 
 void Read_Gyro_Sensor(uint32_t Instance)
@@ -554,12 +562,15 @@ void Thread2(void const * argument)
 {
   /* USER CODE BEGIN Thread2 */
 	uint8_t txData[20] = "Hello from Thread2\r\n";
+
+
   /* Infinite loop */
   for(;;)
   {
 //	 HAL_UART_Transmit(&huart2, txData, 20, 5);
-	 HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+//	 HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
+//	 Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 //	 Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
 	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 

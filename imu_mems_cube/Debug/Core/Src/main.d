@@ -46,7 +46,7 @@ Core/Src/main.o: ../Core/Src/main.c \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h \
- D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/MEMS/Target/iks01a2_conf.h \
+ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_bus.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_conf.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_errno.h \
@@ -151,7 +151,7 @@ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_c
 
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h:
 
-D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/MEMS/Target/iks01a2_conf.h:
+D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h:
 
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_bus.h:
 

@@ -54,7 +54,7 @@
 									
 									
 									
-								<listOptionValue builtIn="false" value="../MEMS/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
+								<listOptionValue builtIn="false" value="../X-CUBE-MEMS1/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1504200309" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F446xx" />
@@ -84,7 +84,7 @@
 									
 									
 									
-								<listOptionValue builtIn="false" value="../MEMS/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
+								<listOptionValue builtIn="false" value="../X-CUBE-MEMS1/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.226046034" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F446xx" />
@@ -124,7 +124,7 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<sourceEntries>
+					<sourceEntries><entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="X-CUBE-MEMS1" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="custom" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="MEMS" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
@@ -189,7 +189,7 @@
 									
 									
 									
-								<listOptionValue builtIn="false" value="../MEMS/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
+								<listOptionValue builtIn="false" value="../X-CUBE-MEMS1/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.1504200309" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F446xx" />
@@ -219,7 +219,7 @@
 									
 									
 									
-								<listOptionValue builtIn="false" value="../MEMS/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
+								<listOptionValue builtIn="false" value="../X-CUBE-MEMS1/Target" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm6dsl" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lsm303agr" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/hts221" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/lps22hb" /><listOptionValue builtIn="false" value="../Drivers/BSP/IKS01A2" /><listOptionValue builtIn="false" value="../Drivers/BSP/Components/Common" /></option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.symbols.944009167" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER" />
 									<listOptionValue builtIn="false" value="STM32F446xx" />
@@ -259,7 +259,7 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<sourceEntries>
+					<sourceEntries><entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="X-CUBE-MEMS1" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="custom" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="MEMS" />
 						<entry excluding="" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares" />
