@@ -23,12 +23,16 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "iks01a2_motion_sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct displayFloatToInt_s {
+  int8_t sign; /* 0 means positive, 1 means negative*/
+  uint32_t  out_int;
+  uint32_t  out_dec;
+} displayFloatToInt_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -41,28 +45,233 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 osThreadId Task1Handle;
 osThreadId Task2Handle;
 osMutexId uartMutexHandle;
 /* USER CODE BEGIN PV */
-
+const int MAX_BUF_SIZE = 100;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 void Thread1(void const * argument);
 void Thread2(void const * argument);
 
 /* USER CODE BEGIN PFP */
+static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_prec);
+void Init_Motion_Sensors();
+void Read_Sensors_Capabilities(uint32_t Instance);
+void Read_Gyro_Sensor(uint32_t Instance);
+void Read_Magneto_Sensor(uint32_t Instance);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void Init_Motion_Sensors()
+{
+	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM6DSL_0, MOTION_ACCELERO | MOTION_GYRO);
+	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO);
+	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO);
+}
+
+
+void Read_Sensors_Capabilities(uint32_t Instance)
+{
+	static IKS01A2_MOTION_SENSOR_Capabilities_t MotionCapabilities[IKS01A2_MOTION_INSTANCES_NBR];
+	char dataOut[MAX_BUF_SIZE];
+
+	displayFloatToInt_t out_value_odr;
+	int i;
+	/*Prototype*/
+
+
+
+
+//	  IKS01A2_MOTION_SENSOR_Enable(Instance, MOTION_GYRO);
+
+	  for(i = 0; i < IKS01A2_MOTION_INSTANCES_NBR; i++)
+	  {
+	    IKS01A2_MOTION_SENSOR_GetCapabilities(i, &MotionCapabilities[i]);
+	    snprintf(dataOut, MAX_BUF_SIZE,
+	             "\r\nMotion Sensor Instance %d capabilities: \r\n ACCELEROMETER: %d\r\n GYROSCOPE: %d\r\n MAGNETOMETER: %d\r\n",
+	             i, MotionCapabilities[i].Acc, MotionCapabilities[i].Gyro, MotionCapabilities[i].Magneto);
+	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
+
+//	    floatToInt(MotionCapabilities[i].AccMaxOdr, &out_value_odr, 3);
+//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX ACC ODR: %d.%03d Hz, MAX ACC FS: %d\r\n", (int)out_value_odr.out_int,
+//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].AccMaxFS);
+//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
+
+//	    floatToInt(MotionCapabilities[i].GyroMaxOdr, &out_value_odr, 3);
+//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX GYRO ODR: %d.%03d Hz, MAX GYRO FS: %d\r\n", (int)out_value_odr.out_int,
+//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].GyroMaxFS);
+//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
+//
+//	    floatToInt(MotionCapabilities[i].MagMaxOdr, &out_value_odr, 3);
+//	    snprintf(dataOut, MAX_BUF_SIZE, " MAX MAG ODR: %d.%03d Hz, MAX MAG FS: %d\r\n", (int)out_value_odr.out_int,
+//	             (int)out_value_odr.out_dec, (int)MotionCapabilities[i].MagMaxFS);
+//
+//	    HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 10);
+//	    printf("%s", dataOut);
+	  }
+
+	/*END_OF_PROTOTYPE*/
+//	  float odr;
+//	  int32_t fullScale;
+//	  IKS01A2_MOTION_SENSOR_Axes_t acceleration;
+//	  uint8_t whoami;
+//
+//	  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, 2U, &acceleration))
+//	  {
+//	    snprintf(dataOut, MAX_BUF_SIZE, "\r\nACC[%d]: Error\r\n", (int)Instance);
+//	  }
+//	  HAL_UART_Transmit(&huart2, dataOut, MAX_BUF_SIZE, 5);
+}
+
+void Read_Gyro_Sensor(uint32_t Instance)
+{
+
+  float odr;
+  int32_t fullScale;
+  IKS01A2_MOTION_SENSOR_Axes_t angular_velocity;
+  displayFloatToInt_t out_value;
+  uint8_t whoami;
+  char dataOut[MAX_BUF_SIZE];
+  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_GYRO, &angular_velocity))
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "GYR[%d]: Error\r\n", (int)Instance);
+  }
+  else
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "GYR_X[%d]: %d, GYR_Y[%d]: %d, GYR_Z[%d]: %d\r\n", (int)Instance,
+             (int)angular_velocity.x, (int)Instance, (int)angular_velocity.y, (int)Instance, (int)angular_velocity.z);
+  }
+
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+
+
+    if (IKS01A2_MOTION_SENSOR_ReadID(Instance, &whoami))
+    {
+      snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: Error\r\n", (int)Instance);
+    }
+    else
+    {
+      snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: 0x%x\r\n", (int)Instance, (int)whoami);
+    }
+
+    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+    if (IKS01A2_MOTION_SENSOR_GetOutputDataRate(Instance, MOTION_GYRO, &odr))
+    {
+      snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: ERROR\r\n", (int)Instance);
+    }
+    else
+    {
+      floatToInt(odr, &out_value, 3);
+      snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: %d.%03d Hz\r\n", (int)Instance, (int)out_value.out_int,
+               (int)out_value.out_dec);
+    }
+
+    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+    if (IKS01A2_MOTION_SENSOR_GetFullScale(Instance, MOTION_GYRO, &fullScale))
+    {
+      snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: ERROR\r\n", (int)Instance);
+    }
+    else
+    {
+      snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: %d dps\r\n", (int)Instance, (int)fullScale);
+    }
+
+    HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+}
+
+void Read_Magneto_Sensor(uint32_t Instance)
+{
+
+  float odr;
+  int32_t fullScale;
+  IKS01A2_MOTION_SENSOR_Axes_t magnetic_field;
+  displayFloatToInt_t out_value;
+  uint8_t whoami;
+  char dataOut[MAX_BUF_SIZE];
+
+  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_MAGNETO, &magnetic_field))
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "\r\nMAG[%d]: Error\r\n", (int)Instance);
+  }
+  else
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "\r\nMAG_X[%d]: %d, MAG_Y[%d]: %d, MAG_Z[%d]: %d\r\n", (int)Instance,
+             (int)magnetic_field.x, (int)Instance, (int)magnetic_field.y, (int)Instance, (int)magnetic_field.z);
+  }
+
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+
+
+  if (IKS01A2_MOTION_SENSOR_ReadID(Instance, &whoami))
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: Error\r\n", (int)Instance);
+  }
+  else
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: 0x%x\r\n", (int)Instance, (int)whoami);
+  }
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+
+  if (IKS01A2_MOTION_SENSOR_GetOutputDataRate(Instance, MOTION_MAGNETO, &odr))
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: ERROR\r\n", (int)Instance);
+  }
+  else
+  {
+    floatToInt(odr, &out_value, 3);
+    snprintf(dataOut, MAX_BUF_SIZE, "ODR[%d]: %d.%03d Hz\r\n", (int)Instance, (int)out_value.out_int,
+             (int)out_value.out_dec);
+  }
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+  if (IKS01A2_MOTION_SENSOR_GetFullScale(Instance, MOTION_MAGNETO, &fullScale))
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: ERROR\r\n", (int)Instance);
+  }
+  else
+  {
+    snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: %d gauss\r\n", (int)Instance, (int)fullScale);
+  }
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+
+}
+
+
+static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_prec)
+{
+  if(in >= 0.0f)
+  {
+    out_value->sign = 0;
+  }else
+  {
+    out_value->sign = 1;
+    in = -in;
+  }
+
+  in = in + (0.5f / pow(10, dec_prec));
+  out_value->out_int = (int32_t)in;
+  in = in - (float)(out_value->out_int);
+  out_value->out_dec = (int32_t)trunc(in * pow(10, dec_prec));
+}
 
 /* USER CODE END 0 */
 
@@ -73,7 +282,7 @@ void Thread2(void const * argument);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	Init_Motion_Sensors();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -94,6 +303,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
@@ -139,9 +349,14 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+
+
   while (1)
   {
 
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
+	  HAL_Delay(500);
 
 
 
@@ -192,6 +407,39 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -236,22 +484,39 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Button_Pin */
-  GPIO_InitStruct.Pin = Button_Pin;
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(Button_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : Led_Pin */
-  GPIO_InitStruct.Pin = Led_Pin;
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(Led_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB10 PB4 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_4|GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
 
@@ -272,7 +537,7 @@ void Thread1(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_WritePin(Led_GPIO_Port, Led_Pin, HAL_GPIO_ReadPin(Button_GPIO_Port, Button_Pin));
+	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
 	  osDelay(100);
   }
   /* USER CODE END 5 */
@@ -288,10 +553,17 @@ void Thread1(void const * argument)
 void Thread2(void const * argument)
 {
   /* USER CODE BEGIN Thread2 */
+	uint8_t txData[20] = "Hello from Thread2\r\n";
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+//	 HAL_UART_Transmit(&huart2, txData, 20, 5);
+	 HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+//	 Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
+	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+
+	  osDelay(1000);
   }
   /* USER CODE END Thread2 */
 }
