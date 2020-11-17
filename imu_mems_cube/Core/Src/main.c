@@ -45,6 +45,8 @@ typedef struct displayFloatToInt_s {
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim7;
+
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
@@ -52,6 +54,7 @@ osThreadId Task1Handle;
 osThreadId Task2Handle;
 osMutexId uartMutexHandle;
 /* USER CODE BEGIN PV */
+extern uint8_t overflow_flag_tim7;
 const int MAX_BUF_SIZE = 100;
 /* USER CODE END PV */
 
@@ -60,6 +63,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_TIM7_Init(void);
 void Thread1(void const * argument);
 void Thread2(void const * argument);
 
@@ -69,11 +73,19 @@ void Init_Motion_Sensors();
 void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if((htim->Instance==TIM7)&&(overflow_flag_tim7)){
+		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+	}
+	return;
+}
+
 
 void Init_Motion_Sensors()
 {
@@ -313,8 +325,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-
+  	HAL_TIM_Base_Init(&htim7);
+	HAL_TIM_Base_Start_IT(&htim7);
+	htim7.Instance->CNT=0;
   /* USER CODE END 2 */
 
   /* Create the mutex(es) */
@@ -412,6 +427,44 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief TIM7 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM7_Init(void)
+{
+
+  /* USER CODE BEGIN TIM7_Init 0 */
+
+  /* USER CODE END TIM7_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM7_Init 1 */
+
+  /* USER CODE END TIM7_Init 1 */
+  htim7.Instance = TIM7;
+  htim7.Init.Prescaler = 319;
+  htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim7.Init.Period = 4999;
+  htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim7) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim7, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM7_Init 2 */
+
+  /* USER CODE END TIM7_Init 2 */
+
 }
 
 /**
@@ -561,7 +614,7 @@ void Thread1(void const * argument)
 void Thread2(void const * argument)
 {
   /* USER CODE BEGIN Thread2 */
-	uint8_t txData[20] = "Hello from Thread2\r\n";
+//	uint8_t txData[20] = "Hello from Thread2\r\n";
 
 
   /* Infinite loop */
@@ -572,7 +625,7 @@ void Thread2(void const * argument)
 
 //	 Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 //	 Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
-	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+//	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 
 	  osDelay(1000);
   }
