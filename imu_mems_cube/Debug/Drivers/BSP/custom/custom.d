@@ -28,6 +28,8 @@ Drivers/BSP/custom/custom.o: ../Drivers/BSP/custom/custom.c \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c_ex.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
+ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
+ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  ../Drivers/BSP/custom/custom_errno.h \
  D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/main.h
@@ -89,6 +91,10 @@ D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_c
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h:
 
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h:
+
+D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
+
+D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 
 D:/materialy/CPS-semestr2/Embedded\ systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 

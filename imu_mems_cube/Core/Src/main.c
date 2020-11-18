@@ -219,8 +219,6 @@ void Read_Gyro_Sensor(uint32_t Instance)
 void Read_Magneto_Sensor(uint32_t Instance)
 {
 
-  float odr;
-  int32_t fullScale;
   IKS01A2_MOTION_SENSOR_Axes_t magnetic_field;
   displayFloatToInt_t out_value;
   uint8_t whoami;
@@ -240,7 +238,7 @@ void Read_Magneto_Sensor(uint32_t Instance)
 
 
 
-  if (IKS01A2_MOTION_SENSOR_ReadID(Instance, &whoami))
+/*  if (IKS01A2_MOTION_SENSOR_ReadID(Instance, &whoami))
   {
     snprintf(dataOut, MAX_BUF_SIZE, "WHOAMI[%d]: Error\r\n", (int)Instance);
   }
@@ -271,7 +269,7 @@ void Read_Magneto_Sensor(uint32_t Instance)
   {
     snprintf(dataOut, MAX_BUF_SIZE, "FS[%d]: %d gauss\r\n", (int)Instance, (int)fullScale);
   }
-  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);
+  HAL_UART_Transmit(&huart2, dataOut, strlen(dataOut), 10);*/
 
 }
 
