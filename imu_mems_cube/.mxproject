@@ -3,33 +3,33 @@ LibFiles=Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h;Drivers/STM32F4xx_
 
 [PreviousUsedSW4STM32Files]
 SourceFiles=..\Core\Src\main.c;..\Core\Src\freertos.c;..\Core\Src\custom_bus.c;..\Core\Src\stm32f4xx_it.c;..\Core\Src\stm32f4xx_hal_msp.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c;..\Middlewares/Third_Party/FreeRTOS/Source/croutine.c;..\Middlewares/Third_Party/FreeRTOS/Source/event_groups.c;..\Middlewares/Third_Party/FreeRTOS/Source/list.c;..\Middlewares/Third_Party/FreeRTOS/Source/queue.c;..\Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c;..\Middlewares/Third_Party/FreeRTOS/Source/tasks.c;..\Middlewares/Third_Party/FreeRTOS/Source/timers.c;..\Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c;..\Core\Src/system_stm32f4xx.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c;..\Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c;..\Middlewares/Third_Party/FreeRTOS/Source/croutine.c;..\Middlewares/Third_Party/FreeRTOS/Source/event_groups.c;..\Middlewares/Third_Party/FreeRTOS/Source/list.c;..\Middlewares/Third_Party/FreeRTOS/Source/queue.c;..\Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c;..\Middlewares/Third_Party/FreeRTOS/Source/tasks.c;..\Middlewares/Third_Party/FreeRTOS/Source/timers.c;..\Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c;..\Core\Src/system_stm32f4xx.c;..\Drivers/CMSIS/Device/ST/STM32F4xx/Source/Templates/system_stm32f4xx.c;;..\Middlewares/Third_Party/FreeRTOS/Source/croutine.c;..\Middlewares/Third_Party/FreeRTOS/Source/event_groups.c;..\Middlewares/Third_Party/FreeRTOS/Source/list.c;..\Middlewares/Third_Party/FreeRTOS/Source/queue.c;..\Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c;..\Middlewares/Third_Party/FreeRTOS/Source/tasks.c;..\Middlewares/Third_Party/FreeRTOS/Source/timers.c;..\Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c;..\Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c;
-HeaderPath=..\Drivers\STM32F4xx_HAL_Driver\Inc;..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;..\Middlewares\Third_Party\FreeRTOS\Source\include;..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\Drivers\CMSIS\Include;..\Drivers\BSP\Components\lsm6dsl;..\Drivers\BSP\Components\lsm303agr;..\Drivers\BSP\Components\hts221;..\Drivers\BSP\Components\lps22hb;..\Drivers\BSP\IKS01A2;..\Drivers\BSP\Components\Common;..\Core\Inc;..\X-CUBE-MEMS1\Target;
+HeaderPath=..\Drivers\STM32F4xx_HAL_Driver\Inc;..\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy;..\Middlewares\Third_Party\FreeRTOS\Source\include;..\Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS;..\Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F;..\Drivers\CMSIS\Device\ST\STM32F4xx\Include;..\Drivers\CMSIS\Include;..\Middlewares\ST\STM32_MotionAC_Library\Inc;..\Middlewares\ST\STM32_MotionGC_Library\Inc;..\Drivers\BSP\Components\lsm6dsl;..\Drivers\BSP\Components\lsm303agr;..\Drivers\BSP\Components\hts221;..\Drivers\BSP\Components\lps22hb;..\Drivers\BSP\IKS01A2;..\Drivers\BSP\Components\Common;..\Middlewares\ST\STM32_MotionMC_Library\Inc;..\Core\Inc;..\X-CUBE-MEMS1\Target;
 CDefines=USE_HAL_DRIVER;STM32F446xx;USE_HAL_DRIVER;USE_HAL_DRIVER;
 
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=9
-HeaderFiles#0=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/FreeRTOSConfig.h
-HeaderFiles#1=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h
-HeaderFiles#2=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/custom_bus.h
-HeaderFiles#3=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/custom_errno.h
-HeaderFiles#4=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/custom_conf.h
-HeaderFiles#5=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/stm32f4xx_it.h
-HeaderFiles#6=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/RTE_Components.h
-HeaderFiles#7=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/stm32f4xx_hal_conf.h
-HeaderFiles#8=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc/main.h
+HeaderFiles#0=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/FreeRTOSConfig.h
+HeaderFiles#1=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target/iks01a2_conf.h
+HeaderFiles#2=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_bus.h
+HeaderFiles#3=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_errno.h
+HeaderFiles#4=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/custom_conf.h
+HeaderFiles#5=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/stm32f4xx_it.h
+HeaderFiles#6=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/RTE_Components.h
+HeaderFiles#7=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/stm32f4xx_hal_conf.h
+HeaderFiles#8=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc/main.h
 HeaderFolderListSize=2
-HeaderPath#0=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Inc
-HeaderPath#1=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/X-CUBE-MEMS1/Target
+HeaderPath#0=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Inc
+HeaderPath#1=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/X-CUBE-MEMS1/Target
 HeaderFiles=;
 SourceFileListSize=5
-SourceFiles#0=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src/freertos.c
-SourceFiles#1=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src/custom_bus.c
-SourceFiles#2=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src/stm32f4xx_it.c
-SourceFiles#3=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src/stm32f4xx_hal_msp.c
-SourceFiles#4=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src/main.c
+SourceFiles#0=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src/freertos.c
+SourceFiles#1=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src/custom_bus.c
+SourceFiles#2=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src/stm32f4xx_it.c
+SourceFiles#3=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src/stm32f4xx_hal_msp.c
+SourceFiles#4=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src/main.c
 SourceFolderListSize=1
-SourcePath#0=C:/Users/Mikolaj/Desktop/cwiczenia_ze_studiow/embeddy/2/repo/imu_mems_cube/Core/Src
+SourcePath#0=D:/materialy/CPS-semestr2/Embedded systems/Git_repo_stmf446/imu_mems/imu_mems_cube/Core/Src
 SourceFiles=;
 
 [ThirdPartyIp]
@@ -37,6 +37,7 @@ ThirdPartyIpNumber=1
 ThirdPartyIpName#0=STMicroelectronics.X-CUBE-MEMS1.8.1.1
 
 [ThirdPartyIp#STMicroelectronics.X-CUBE-MEMS1.8.1.1]
-header=Drivers/BSP/Components/lsm6dsl/lsm6dsl_reg.h;Drivers/BSP/Components/lsm6dsl/lsm6dsl.h;Drivers/BSP/Components/lsm303agr/lsm303agr_reg.h;Drivers/BSP/Components/lsm303agr/lsm303agr.h;Drivers/BSP/Components/hts221/hts221_reg.h;Drivers/BSP/Components/hts221/hts221.h;Drivers/BSP/Components/lps22hb/lps22hb_reg.h;Drivers/BSP/Components/lps22hb/lps22hb.h;Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h;Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.h;Drivers/BSP/IKS01A2/iks01a2_env_sensors.h;Drivers/BSP/IKS01A2/iks01a2_env_sensors_ex.h;Drivers/BSP/Components/Common/motion_sensor.h;Drivers/BSP/Components/Common/env_sensor.h;
+library=Middlewares/ST/STM32_MotionAC_Library/Lib/MotionAC_CM4F_wc32_ot.a;Middlewares/ST/STM32_MotionGC_Library/Lib/MotionGC_CM4F_wc32_ot.a;Middlewares/ST/STM32_MotionMC_Library/Lib/MotionMC_CM4F_wc32_ot.a;
+header=Middlewares/ST/STM32_MotionAC_Library/Inc/motion_ac.h;Middlewares/ST/STM32_MotionGC_Library/Inc/motion_gc.h;Drivers/BSP/Components/lsm6dsl/lsm6dsl_reg.h;Drivers/BSP/Components/lsm6dsl/lsm6dsl.h;Drivers/BSP/Components/lsm303agr/lsm303agr_reg.h;Drivers/BSP/Components/lsm303agr/lsm303agr.h;Drivers/BSP/Components/hts221/hts221_reg.h;Drivers/BSP/Components/hts221/hts221.h;Drivers/BSP/Components/lps22hb/lps22hb_reg.h;Drivers/BSP/Components/lps22hb/lps22hb.h;Drivers/BSP/IKS01A2/iks01a2_motion_sensors.h;Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.h;Drivers/BSP/IKS01A2/iks01a2_env_sensors.h;Drivers/BSP/IKS01A2/iks01a2_env_sensors_ex.h;Drivers/BSP/Components/Common/motion_sensor.h;Drivers/BSP/Components/Common/env_sensor.h;Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc.h;Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc_cm0p.h;
 source=Drivers/BSP/Components/lsm6dsl/lsm6dsl_reg.c;Drivers/BSP/Components/lsm6dsl/lsm6dsl.c;Drivers/BSP/Components/lsm303agr/lsm303agr_reg.c;Drivers/BSP/Components/lsm303agr/lsm303agr.c;Drivers/BSP/Components/hts221/hts221_reg.c;Drivers/BSP/Components/hts221/hts221.c;Drivers/BSP/Components/lps22hb/lps22hb_reg.c;Drivers/BSP/Components/lps22hb/lps22hb.c;Drivers/BSP/IKS01A2/iks01a2_motion_sensors.c;Drivers/BSP/IKS01A2/iks01a2_motion_sensors_ex.c;Drivers/BSP/IKS01A2/iks01a2_env_sensors.c;Drivers/BSP/IKS01A2/iks01a2_env_sensors_ex.c;
 
