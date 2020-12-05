@@ -119,13 +119,6 @@ void MotionAC_Initialize(uint8_t enable);
   */
 void MotionAC_Update(MAC_input_t *data_in, uint8_t *is_calibrated);
 
-
-void MotionAC_XD()
-{
-	int x =2;
-	int y =4;
-}
-
 /**
   * @brief  Get the accelerometer compensation parameters
   * @param  data_out  pointer to actual accelerometer offset [g], scale factor correction matrix [-] and quality factor

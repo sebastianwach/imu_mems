@@ -314,39 +314,30 @@ int32_t HTS221_HUM_SetOutputDataRate(HTS221_Object_t *pObj, float Odr)
 int32_t HTS221_HUM_GetHumidity(HTS221_Object_t *pObj, float *Value)
 {
   hts221_axis1bit16_t data_raw_humidity;
-  hts221_axis1bit16_t coeff;
   lin_t lin_hum;
 
-  if (hts221_hum_adc_point_0_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_hum_adc_point_0_get(&(pObj->Ctx), &lin_hum.x0) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_hum.x0 = (float)coeff.i16bit;
-
-  if (hts221_hum_rh_point_0_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_hum_rh_point_0_get(&(pObj->Ctx), &lin_hum.y0) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_hum.y0 = (float)coeff.u8bit[0];
-
-  if (hts221_hum_adc_point_1_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_hum_adc_point_1_get(&(pObj->Ctx), &lin_hum.x1) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_hum.x1 = (float)coeff.i16bit;
-
-  if (hts221_hum_rh_point_1_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_hum_rh_point_1_get(&(pObj->Ctx), &lin_hum.y1) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_hum.y1 = (float)coeff.u8bit[0];
-
-  (void)memset(data_raw_humidity.u8bit, 0x00, sizeof(int16_t));
-  if (hts221_humidity_raw_get(&(pObj->Ctx), data_raw_humidity.u8bit) != HTS221_OK)
+  (void)memset(&data_raw_humidity.i16bit, 0x00, sizeof(int16_t));
+  if (hts221_humidity_raw_get(&(pObj->Ctx), &data_raw_humidity.i16bit) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
@@ -471,39 +462,30 @@ int32_t HTS221_TEMP_SetOutputDataRate(HTS221_Object_t *pObj, float Odr)
 int32_t HTS221_TEMP_GetTemperature(HTS221_Object_t *pObj, float *Value)
 {
   hts221_axis1bit16_t data_raw_temperature;
-  hts221_axis1bit16_t coeff;
   lin_t lin_temp;
 
-  if (hts221_temp_adc_point_0_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_temp_adc_point_0_get(&(pObj->Ctx), &lin_temp.x0) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_temp.x0 = (float)coeff.i16bit;
-
-  if (hts221_temp_deg_point_0_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_temp_deg_point_0_get(&(pObj->Ctx), &lin_temp.y0) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_temp.y0 = (float)coeff.u8bit[0];
-
-  if (hts221_temp_adc_point_1_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_temp_adc_point_1_get(&(pObj->Ctx), &lin_temp.x1) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_temp.x1 = (float)coeff.i16bit;
-
-  if (hts221_temp_deg_point_1_get(&(pObj->Ctx), coeff.u8bit) != HTS221_OK)
+  if (hts221_temp_deg_point_1_get(&(pObj->Ctx), &lin_temp.y1) != HTS221_OK)
   {
     return HTS221_ERROR;
   }
 
-  lin_temp.y1 = (float)coeff.u8bit[0];
-
-  (void)memset(data_raw_temperature.u8bit, 0x00, sizeof(int16_t));
-  if (hts221_temperature_raw_get(&(pObj->Ctx), data_raw_temperature.u8bit) != HTS221_OK)
+  (void)memset(&data_raw_temperature.i16bit, 0x00, sizeof(int16_t));
+  if (hts221_temperature_raw_get(&(pObj->Ctx), &data_raw_temperature.i16bit) != HTS221_OK)
   {
     return HTS221_ERROR;
   }

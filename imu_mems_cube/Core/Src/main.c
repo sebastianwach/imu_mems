@@ -25,7 +25,6 @@
 /* USER CODE BEGIN Includes */
 #include "iks01a2_motion_sensors.h"
 #include "motion_ac.h"
-#include "motion_mc_cm0p.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -154,7 +153,7 @@ void Read_Accelero_Sensor(uint32_t Instance)
 
 
 
-	MotionAC_XD();
+//	MotionAC_XD();
 //	MotionAC_Initialize(1);
 //	MotionAC_Update(&input_cal_acc, isCalibrated );
 
@@ -504,13 +503,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }

@@ -342,7 +342,7 @@ int32_t LPS22HB_PRESS_GetPressure(LPS22HB_Object_t *pObj, float *Value)
   lps22hb_axis1bit32_t data_raw_pressure;
 
   (void)memset(data_raw_pressure.u8bit, 0x00, sizeof(int32_t));
-  if (lps22hb_pressure_raw_get(&(pObj->Ctx), data_raw_pressure.u8bit) != LPS22HB_OK)
+  if (lps22hb_pressure_raw_get(&(pObj->Ctx), (uint32_t *)&data_raw_pressure.i32bit) != LPS22HB_OK)
   {
     return LPS22HB_ERROR;
   }
@@ -468,7 +468,7 @@ int32_t LPS22HB_TEMP_GetTemperature(LPS22HB_Object_t *pObj, float *Value)
   lps22hb_axis1bit16_t data_raw_temperature;
 
   (void)memset(data_raw_temperature.u8bit, 0x00, sizeof(int16_t));
-  if (lps22hb_temperature_raw_get(&(pObj->Ctx), data_raw_temperature.u8bit) != LPS22HB_OK)
+  if (lps22hb_temperature_raw_get(&(pObj->Ctx), &data_raw_temperature.i16bit) != LPS22HB_OK)
   {
     return LPS22HB_ERROR;
   }
@@ -768,19 +768,15 @@ int32_t LPS22HB_Write_Reg(LPS22HB_Object_t *pObj, uint8_t Reg, uint8_t Data)
  */
 int32_t LPS22HB_Get_Temp(LPS22HB_Object_t *pObj, float *Data)
 {
-  uint8_t buffer[2];
-  uint32_t tmp = 0;
+  lps22hb_axis1bit16_t data_raw_temperature;
 
-  /* Read data from LPS22HB. */
-  if (lps22hb_temperature_raw_get(&(pObj->Ctx), buffer) != LPS22HB_OK)
+  (void)memset(data_raw_temperature.u8bit, 0x00, sizeof(int16_t));
+  if (lps22hb_temperature_raw_get(&(pObj->Ctx), &data_raw_temperature.i16bit) != LPS22HB_OK)
   {
     return LPS22HB_ERROR;
   }
 
-  /* Build the raw tmp */
-  tmp = (((uint16_t)buffer[1]) << 8) + (uint16_t)buffer[0];
-
-  *Data = ((float)tmp) / 100.0f;
+  *Data = lps22hb_from_lsb_to_degc(data_raw_temperature.i16bit);
 
   return LPS22HB_OK;
 }

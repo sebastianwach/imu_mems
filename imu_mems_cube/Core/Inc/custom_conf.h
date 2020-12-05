@@ -48,6 +48,7 @@
 
 /* UART1 Baud rate in bps  */
 #define BUS_UART1_BAUDRATE                  9600U /* baud rate of UARTn = 9600 baud */
+
 /**
   * @}
   */
