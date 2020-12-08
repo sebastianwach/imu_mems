@@ -55,7 +55,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/BSP/Components/lsm6dsl/lsm6dsl_reg.h \
  ../Drivers/BSP/Components/lsm303agr/lsm303agr.h \
  ../Drivers/BSP/Components/lsm303agr/lsm303agr_reg.h \
- ../Middlewares/ST/STM32_MotionAC_Library/Inc/motion_ac.h
+ ../Middlewares/ST/STM32_MotionAC_Library/Inc/motion_ac.h \
+ ../Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc_cm0p.h \
+ ../Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc.h
 
 ../Core/Inc/main.h:
 
@@ -176,3 +178,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/BSP/Components/lsm303agr/lsm303agr_reg.h:
 
 ../Middlewares/ST/STM32_MotionAC_Library/Inc/motion_ac.h:
+
+../Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc_cm0p.h:
+
+../Middlewares/ST/STM32_MotionMC_Library/Inc/motion_mc.h:

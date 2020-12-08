@@ -25,19 +25,22 @@
 /* USER CODE BEGIN Includes */
 #include "iks01a2_motion_sensors.h"
 #include "motion_ac.h"
+#include <stdio.h>
+#include "motion_mc_cm0p.h"
+#include "motion_mc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct displayFloatToInt_s {
-  int8_t sign; /* 0 means positive, 1 means negative*/
-  uint32_t  out_int;
-  uint32_t  out_dec;
-} displayFloatToInt_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define VERSION_STR_LENG 35
+#define REPORT_INTERVAL 20
+#define SAMPLE_TIME 100
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -57,6 +60,12 @@ osMutexId uartMutexHandle;
 /* USER CODE BEGIN PV */
 extern uint8_t overflow_flag_tim7;
 const int MAX_BUF_SIZE = 100;
+volatile uint32_t timestamp =0;
+
+char lib_version[VERSION_STR_LENG];
+MAC_knobs_t Knobs;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,11 +78,13 @@ void Thread1(void const * argument);
 void Thread2(void const * argument);
 
 /* USER CODE BEGIN PFP */
-static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_prec);
 void Init_Motion_Sensors();
+void Init_MotionAC_Calibration();
+void Init_MotionMC_Calibration();
 void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
 /* USER CODE END PFP */
@@ -83,9 +94,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if((htim->Instance==TIM7)&&(overflow_flag_tim7)){
 
-		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
+//		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 //		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
-//		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 
 
 	}
@@ -98,7 +109,23 @@ void Init_Motion_Sensors()
 	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM6DSL_0, MOTION_ACCELERO | MOTION_GYRO);
 	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_ACC_0, MOTION_ACCELERO);
 	  IKS01A2_MOTION_SENSOR_Init(IKS01A2_LSM303AGR_MAG_0, MOTION_MAGNETO);
+
 }
+
+void Init_MotionAC_Calibration()
+{
+	MotionAC_Initialize(1);
+	MotionAC_GetKnobs(&Knobs);
+	Knobs.Sample_ms = REPORT_INTERVAL;
+	(void)MotionAC_SetKnobs(&Knobs);
+
+}
+
+void Init_MotionMC_Calibration()
+{
+	MotionMC_Initialize(SAMPLE_TIME, 1);
+}
+
 
 
 void Read_Accelero_Sensor(uint32_t Instance)
@@ -133,32 +160,50 @@ void Read_Accelero_Sensor(uint32_t Instance)
 				acc[0], acc[1], acc[2]);
 
 
-//		MAC_input_t input_cal_acc;
-//		memcpy(input_cal_acc.Acc, acc,sizeof(acc));
-//
-//		snprintf(dataOutUART, MAX_BUF_SIZE, "Accelerometer: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
-//				input_cal_acc.Acc[0], input_cal_acc.Acc[1], input_cal_acc.Acc[2]);
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+
+		uint8_t isCalibrated;
+
+		MAC_input_t input_cal_acc;
+		memcpy(input_cal_acc.Acc, acc,sizeof(acc));
+		memcpy(input_cal_acc.TimeStamp, 1000, sizeof(int));
+
+
+		/*START CALIBRATION*/
+
+		MAC_input_t data_in;
+		MAC_output_t data_out;;
+		float acc_cal_x, acc_cal_y, acc_cal_z;
+		uint8_t is_calibrated;
+
+		data_in.Acc[0]=acc[0];
+		data_in.Acc[1]=acc[1];
+		data_in.Acc[2]=acc[2];
+
+		MotionAC_Update(&data_in, &is_calibrated);
+
+		/* Get Calibration coeficients */
+		MotionAC_GetCalParams(&data_out);
+
+		/* Apply correction */
+		acc_cal_x = (data_in.Acc[0] - data_out.AccBias[0])* data_out.SF_Matrix[0][0];
+		acc_cal_x = (data_in.Acc[1] - data_out.AccBias[1])* data_out.SF_Matrix[1][1];
+		acc_cal_x = (data_in.Acc[2] - data_out.AccBias[2])* data_out.SF_Matrix[2][2];
+
+		snprintf(dataOutUART, MAX_BUF_SIZE, "Calibrated accelerometer: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
+					acc[0], acc[1], acc[2]);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+		snprintf(dataOutUART, MAX_BUF_SIZE, "Acc bias: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
+					data_out.AccBias[0], data_out.AccBias[1], data_out.AccBias[2]);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+		/*Finish calibration*/
 
 	}
 
-	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
-
-
-	uint8_t isCalibrated;
-
-	MAC_input_t input_cal_acc;
-	memcpy(input_cal_acc.Acc, acc,sizeof(acc));
-	memcpy(input_cal_acc.TimeStamp, 1000, sizeof(int));
-//	input_cal_acc.TimeStamp = 1000;
-
-
-
-//	MotionAC_XD();
-//	MotionAC_Initialize(1);
-//	MotionAC_Update(&input_cal_acc, isCalibrated );
-
-//	MMC_CM0P_Mode_t mode;
-//	MotionMC_CM0P_Initialize(1000, mode, 1);
 
 
 }
@@ -201,30 +246,60 @@ void Read_Magneto_Sensor(uint32_t Instance)
   {
     snprintf(dataOutUART, MAX_BUF_SIZE, "Magnetometer: X: %d\t Y: %d\t Z: %d\r\n",
              (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
+
+    //Data to txt
+//    snprintf(dataOutUART, MAX_BUF_SIZE, "%d\t%d\t%d\r\n",
+//             (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
+
   }
+
 
   HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
+  /*Start Calibration*/
+  float mag[3];
+  float mag_cal_x, mag_cal_y, mag_cal_z;
+  MMC_Input_t data_in;
+  MMC_Output_t data_out;
+
+  mag[0] = (float) magnetic_field.x;
+  mag[1] = (float) magnetic_field.y;
+  mag[2] = (float) magnetic_field.z;
+
+//  snprintf(dataOutUART, MAX_BUF_SIZE, "Magnetometer: X: %f\t Y: %f\t Z: %f\r\n",
+//		  mag[0], mag[1], mag[2]);
+
+  memcpy(data_in.Mag, mag,sizeof(mag));
+
+  data_in.TimeStamp = timestamp*SAMPLE_TIME;
+
+  MotionMC_Update(&data_in);
+
+  MotionMC_GetCalParams(&data_out);
+
+  mag_cal_x = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[0][0]
+					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[0][1]
+					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[0][2] );
+
+  mag_cal_y = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[1][0]
+					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[1][1]
+					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[1][2] );
+
+  mag_cal_z = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[2][0]
+					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[2][1]
+					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[2][2] );
+
+
+  snprintf(dataOutUART, MAX_BUF_SIZE, "CMagnetometer: X: %f\t Y: %f\t Z: %f\r\n",
+		  mag_cal_x, mag_cal_y, mag_cal_z);
+      HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+
+
+
 
 }
 
-
-static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_prec)
-{
-  if(in >= 0.0f)
-  {
-    out_value->sign = 0;
-  }else
-  {
-    out_value->sign = 1;
-    in = -in;
-  }
-
-  in = in + (0.5f / pow(10, dec_prec));
-  out_value->out_int = (int32_t)in;
-  in = in - (float)(out_value->out_int);
-  out_value->out_dec = (int32_t)trunc(in * pow(10, dec_prec));
-}
 
 /* USER CODE END 0 */
 
@@ -235,7 +310,9 @@ static void floatToInt(float in, displayFloatToInt_t *out_value, int32_t dec_pre
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	Init_Motion_Sensors();
+
+
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -244,6 +321,9 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+	Init_Motion_Sensors();
+//	MotionMC_Initialize(SAMPLE_TIME, 1);
+
 
   /* USER CODE END Init */
 
@@ -307,13 +387,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 
 
-
   while (1)
   {
 
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
+	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	  HAL_Delay(500);
-
 
 
     /* USER CODE END WHILE */
@@ -531,8 +609,8 @@ void Thread1(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
-	  osDelay(100);
+//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
+//	  osDelay(100);
   }
   /* USER CODE END 5 */
 }
@@ -560,7 +638,8 @@ void Thread2(void const * argument)
 //	 Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
 //	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 
-	  osDelay(1000);
+
+//	  osDelay(1000);
   }
   /* USER CODE END Thread2 */
 }

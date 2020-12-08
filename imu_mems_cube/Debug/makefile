@@ -65,7 +65,7 @@ main-build: imu_mems_cube.elf secondary-outputs
 
 # Tool invocations
 imu_mems_cube.elf: $(OBJS) $(USER_OBJS) ../STM32F446RETx_FLASH.ld
-	arm-none-eabi-gcc -o "imu_mems_cube.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32F446RETx_FLASH.ld" --specs=nosys.specs -Wl,-Map="imu_mems_cube.map" -Wl,--gc-sections -static -L../Middlewares/ST/STM32_MotionAC_Library/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "imu_mems_cube.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32F446RETx_FLASH.ld" --specs=nosys.specs -Wl,-Map="imu_mems_cube.map" -Wl,--gc-sections -static -L../Middlewares/ST/STM32_MotionAC_Library/Lib -L"D:\materialy\CPS-semestr2\Embedded_systems\git_repo_old_ver\imu_mems\imu_mems_cube\Middlewares\ST\STM32_MotionMC_Library\Lib" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
