@@ -19,7 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -28,6 +27,7 @@
 #include <stdio.h>
 #include "motion_mc_cm0p.h"
 #include "motion_mc.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,6 +40,8 @@
 #define VERSION_STR_LENG 35
 #define REPORT_INTERVAL 20
 #define SAMPLE_TIME 100
+#define PI 3.14159265
+#define MAX_BUF_SIZE 200
 
 /* USER CODE END PD */
 
@@ -49,18 +51,17 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+CRC_HandleTypeDef hcrc;
+
 TIM_HandleTypeDef htim7;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
-osThreadId Task1Handle;
-osThreadId Task2Handle;
-osMutexId uartMutexHandle;
 /* USER CODE BEGIN PV */
 extern uint8_t overflow_flag_tim7;
-const int MAX_BUF_SIZE = 100;
 volatile uint32_t timestamp =0;
+char dataOutUART[MAX_BUF_SIZE];
 
 char lib_version[VERSION_STR_LENG];
 MAC_knobs_t Knobs;
@@ -74,9 +75,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM7_Init(void);
-void Thread1(void const * argument);
-void Thread2(void const * argument);
-
+static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
 void Init_Motion_Sensors();
 void Init_MotionAC_Calibration();
@@ -84,6 +83,9 @@ void Init_MotionMC_Calibration();
 void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
+
+void PrintMEMSValues ( char message[20], float x, float y, float z);
+void PrintMEMSError ( char message[50], int32_t errorNumber);
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
@@ -97,7 +99,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 //		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 //		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
 		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
-
 
 	}
 	return;
@@ -133,7 +134,6 @@ void Read_Accelero_Sensor(uint32_t Instance)
 
 	/*ODR = 104 Hz*/
 	IKS01A2_MOTION_SENSOR_Axes_t acceleration;
-	char dataOutUART[MAX_BUF_SIZE];
 
 	int scale = 1000;
 	float acc[3];
@@ -142,7 +142,9 @@ void Read_Accelero_Sensor(uint32_t Instance)
 
 	if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_ACCELERO, &acceleration))
 	{
-		snprintf(dataOutUART, MAX_BUF_SIZE, "ACC[%d]: Error\r\n", (int)Instance);
+
+		int32_t errorNumber = IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_ACCELERO, &acceleration);
+		PrintMEMSError("Acc", errorNumber);
 	}
 	else
 	{
@@ -155,12 +157,8 @@ void Read_Accelero_Sensor(uint32_t Instance)
 			acc[i]/=scale;
 		}
 
+		PrintMEMSValues("Accelerometer", acc[0], acc[1], acc[2]);
 
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Accelerometer: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
-				acc[0], acc[1], acc[2]);
-
-
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
 
 		uint8_t isCalibrated;
@@ -187,20 +185,32 @@ void Read_Accelero_Sensor(uint32_t Instance)
 		MotionAC_GetCalParams(&data_out);
 
 		/* Apply correction */
-		acc_cal_x = (data_in.Acc[0] - data_out.AccBias[0])* data_out.SF_Matrix[0][0];
-		acc_cal_x = (data_in.Acc[1] - data_out.AccBias[1])* data_out.SF_Matrix[1][1];
-		acc_cal_x = (data_in.Acc[2] - data_out.AccBias[2])* data_out.SF_Matrix[2][2];
+//		acc_cal_x = (data_in.Acc[0] - data_out.AccBias[0])* data_out.SF_Matrix[0][0];
+//		acc_cal_y = (data_in.Acc[1] - data_out.AccBias[1])* data_out.SF_Matrix[1][1];
+//		acc_cal_z = (data_in.Acc[2] - data_out.AccBias[2])* data_out.SF_Matrix[2][2];
 
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Calibrated accelerometer: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
-					acc[0], acc[1], acc[2]);
+		acc_cal_x = acc[0];
+		acc_cal_y = acc[1];
+		acc_cal_z = acc[2];
 
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Acc bias: X: %.3fg\t Y: %.3fg\t Z: %.3fg\r\n",
-					data_out.AccBias[0], data_out.AccBias[1], data_out.AccBias[2]);
 
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+		PrintMEMSValues("Calibrated accelerometer", acc_cal_x, acc_cal_y, acc_cal_z);
+
+		PrintMEMSValues("Acc bias", data_out.AccBias[0], data_out.AccBias[1], data_out.AccBias[2]);
 
 		/*Finish calibration*/
+
+		/*Yaw, roll, pitch*/
+
+		double pitch = 180 * atan (acc_cal_x/sqrt(acc_cal_y*acc_cal_y + acc_cal_z*acc_cal_z))/PI;
+		double roll = 180 * atan (acc_cal_y/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+		double yaw = 180 * atan (acc_cal_z/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+
+		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\t Yaw: %.3f\r\n",
+				pitch, roll, yaw);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
 
 	}
 
@@ -214,19 +224,18 @@ void Read_Gyro_Sensor(uint32_t Instance)
 	/*ODR = 104 Hz, DPS= 2000  address = 0x6a*/
 
 	IKS01A2_MOTION_SENSOR_Axes_t angular_velocity;
-	char dataOutUART[MAX_BUF_SIZE];
 
 	if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_GYRO, &angular_velocity))
 	{
-		snprintf(dataOutUART, MAX_BUF_SIZE, "GYR[%d]: Error\r\n", (int)Instance);
+		int32_t errorNumber = IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_GYRO, &angular_velocity);
+		PrintMEMSError("Gyroscope", errorNumber);
 	}
 	else
 	{
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Gyroscope: X: %d\t Y: %d\t Z: %d\r\n",
-			 (int)angular_velocity.x, (int)angular_velocity.y, (int)angular_velocity.z);
+		PrintMEMSValues("Gyroscope", angular_velocity.x, angular_velocity.y, angular_velocity.z);
 	}
 
-	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
 
 
 
@@ -235,68 +244,98 @@ void Read_Gyro_Sensor(uint32_t Instance)
 void Read_Magneto_Sensor(uint32_t Instance)
 {
 
-  IKS01A2_MOTION_SENSOR_Axes_t magnetic_field;
-  char dataOutUART[MAX_BUF_SIZE];
+	IKS01A2_MOTION_SENSOR_Axes_t magnetic_field;
 
-  if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_MAGNETO, &magnetic_field))
-  {
-    snprintf(dataOutUART, MAX_BUF_SIZE, "\r\nMAG[%d]: Error\r\n", (int)Instance);
-  }
-  else
-  {
-    snprintf(dataOutUART, MAX_BUF_SIZE, "Magnetometer: X: %d\t Y: %d\t Z: %d\r\n",
-             (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
-
-    //Data to txt
-//    snprintf(dataOutUART, MAX_BUF_SIZE, "%d\t%d\t%d\r\n",
-//             (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
-
-  }
+	if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_MAGNETO, &magnetic_field))
+	{
+		int32_t errorNumber = IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_MAGNETO, &magnetic_field);
+		PrintMEMSError("Magnetometer", errorNumber);
+	}
+	else
+	{
+		PrintMEMSValues("Magnetometer", magnetic_field.x, magnetic_field.y, magnetic_field.z);
+	//Data to txt
+	//    snprintf(dataOutUART, MAX_BUF_SIZE, "%d\t%d\t%d\r\n",
+	//             (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
 
 
-  HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
-  /*Start Calibration*/
-  float mag[3];
-  float mag_cal_x, mag_cal_y, mag_cal_z;
-  MMC_Input_t data_in;
-  MMC_Output_t data_out;
+		/*Start Calibration*/
+		float mag[3];
+		float mag_cal_x, mag_cal_y, mag_cal_z;
+		MMC_Input_t data_in;
+		MMC_Output_t data_out;
 
-  mag[0] = (float) magnetic_field.x;
-  mag[1] = (float) magnetic_field.y;
-  mag[2] = (float) magnetic_field.z;
-
-//  snprintf(dataOutUART, MAX_BUF_SIZE, "Magnetometer: X: %f\t Y: %f\t Z: %f\r\n",
-//		  mag[0], mag[1], mag[2]);
-
-  memcpy(data_in.Mag, mag,sizeof(mag));
-
-  data_in.TimeStamp = timestamp*SAMPLE_TIME;
-
-  MotionMC_Update(&data_in);
-
-  MotionMC_GetCalParams(&data_out);
-
-  mag_cal_x = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[0][0]
-					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[0][1]
-					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[0][2] );
-
-  mag_cal_y = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[1][0]
-					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[1][1]
-					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[1][2] );
-
-  mag_cal_z = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[2][0]
-					+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[2][1]
-					+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[2][2] );
+		mag[0] = (float) magnetic_field.x;
+		mag[1] = (float) magnetic_field.y;
+		mag[2] = (float) magnetic_field.z;
 
 
-  snprintf(dataOutUART, MAX_BUF_SIZE, "CMagnetometer: X: %f\t Y: %f\t Z: %f\r\n",
-		  mag_cal_x, mag_cal_y, mag_cal_z);
-      HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+		memcpy(data_in.Mag, mag,sizeof(mag));
+		data_in.TimeStamp = timestamp*SAMPLE_TIME;
+		MotionMC_Update(&data_in);
+		MotionMC_GetCalParams(&data_out);
+
+		mag_cal_x = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[0][0]
+						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[0][1]
+						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[0][2] );
+
+		mag_cal_y = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[1][0]
+						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[1][1]
+						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[1][2] );
+
+		mag_cal_z = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[2][0]
+						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[2][1]
+						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[2][2] );
+
+
+		PrintMEMSValues("CMagnetometer", mag_cal_x, mag_cal_y, mag_cal_z);
 
 
 
 
+//		double pitch = 180 * atan (acc_cal_x/sqrt(acc_cal_y*acc_cal_y + acc_cal_z*acc_cal_z))/PI;
+//		double roll = 180 * atan (acc_cal_y/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+//		double yaw = 180 * atan (acc_cal_z/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+
+
+//		float yaw =  atan2(-mag[1],mag[0])*180/PI;
+//
+//		snprintf(dataOutUART, MAX_BUF_SIZE, "Yaw: %.3f\r\n", yaw);
+//
+//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+
+
+	}
+
+
+
+
+
+}
+
+void PrintMEMSValues ( char message[50], float x, float y, float z)
+{
+	char dest[MAX_BUF_SIZE];
+
+	strcpy( dest, message );
+	strcat( dest, ": X: %.3f\t Y: %.3f\t Z: %.3f\r\n" );
+    snprintf(dataOutUART, MAX_BUF_SIZE, dest, x, y, z);
+
+    HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+}
+
+void PrintMEMSError ( char message[50], int32_t errorNumber)
+{
+	char dest[MAX_BUF_SIZE];
+
+	strcpy( dest, message );
+	strcat( dest, ": Error number: %d\r\n");
+    snprintf(dataOutUART, MAX_BUF_SIZE, dest, errorNumber);
+
+	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
 }
 
@@ -321,8 +360,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-	Init_Motion_Sensors();
-//	MotionMC_Initialize(SAMPLE_TIME, 1);
+
+
 
 
   /* USER CODE END Init */
@@ -339,50 +378,19 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_TIM7_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
-  	HAL_TIM_Base_Init(&htim7);
+
+	Init_Motion_Sensors();
+//	MotionMC_Initialize(SAMPLE_TIME, 1);
+	Init_MotionAC_Calibration();
+
+
+	HAL_TIM_Base_Init(&htim7);
 	HAL_TIM_Base_Start_IT(&htim7);
 	htim7.Instance->CNT=0;
   /* USER CODE END 2 */
 
-  /* Create the mutex(es) */
-  /* definition and creation of uartMutex */
-  osMutexDef(uartMutex);
-  uartMutexHandle = osMutexCreate(osMutex(uartMutex));
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* definition and creation of Task1 */
-  osThreadDef(Task1, Thread1, osPriorityNormal, 0, 128);
-  Task1Handle = osThreadCreate(osThread(Task1), NULL);
-
-  /* definition and creation of Task2 */
-  osThreadDef(Task2, Thread2, osPriorityIdle, 0, 128);
-  Task2Handle = osThreadCreate(osThread(Task2), NULL);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
@@ -438,6 +446,32 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief CRC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_CRC_Init(void)
+{
+
+  /* USER CODE BEGIN CRC_Init 0 */
+
+  /* USER CODE END CRC_Init 0 */
+
+  /* USER CODE BEGIN CRC_Init 1 */
+
+  /* USER CODE END CRC_Init 1 */
+  hcrc.Instance = CRC;
+  if (HAL_CRC_Init(&hcrc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN CRC_Init 2 */
+
+  /* USER CODE END CRC_Init 2 */
+
 }
 
 /**
@@ -555,6 +589,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
@@ -581,13 +616,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 }
@@ -595,54 +630,6 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
-
-/* USER CODE BEGIN Header_Thread1 */
-/**
-  * @brief  Function implementing the Task1 thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_Thread1 */
-void Thread1(void const * argument)
-{
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-//	  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin));
-//	  osDelay(100);
-  }
-  /* USER CODE END 5 */
-}
-
-/* USER CODE BEGIN Header_Thread2 */
-/**
-* @brief Function implementing the Task2 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_Thread2 */
-void Thread2(void const * argument)
-{
-  /* USER CODE BEGIN Thread2 */
-//	uint8_t txData[20] = "Hello from Thread2\r\n";
-
-
-  /* Infinite loop */
-  for(;;)
-  {
-//	 HAL_UART_Transmit(&huart2, txData, 20, 5);
-//	 HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-//	 Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
-//	 Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
-//	 Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
-
-
-//	  osDelay(1000);
-  }
-  /* USER CODE END Thread2 */
-}
 
 /**
   * @brief  This function is executed in case of error occurrence.

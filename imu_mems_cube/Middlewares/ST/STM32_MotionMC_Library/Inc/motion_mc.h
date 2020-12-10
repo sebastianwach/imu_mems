@@ -121,9 +121,10 @@ void MotionMC_GetCalParams(MMC_Output_t *data_out);
 uint8_t MotionMC_GetLibVersion(char *version);
 
 
+
+
 char MotionMC_LoadCalFromNVM (unsigned short intdataSize, unsigned int *data)
 {
-
 	return 0;
 }
 
@@ -131,7 +132,6 @@ char MotionMC_SaveCalInNVM (unsigned short intdataSize, unsigned int *data)
 {
 	return 0;
 }
-
 /**
   * @}
   */

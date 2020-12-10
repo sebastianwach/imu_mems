@@ -147,9 +147,9 @@ uint8_t MotionAC_SetKnobs(MAC_knobs_t *knobs);
   */
 uint8_t MotionAC_GetLibVersion(char *version);
 
+
 char MotionAC_LoadCalFromNVM (unsigned short intdataSize, unsigned int *data)
 {
-
 	return 0;
 }
 
@@ -157,7 +157,6 @@ char MotionAC_SaveCalInNVM (unsigned short intdataSize, unsigned int *data)
 {
 	return 0;
 }
-
 /**
   * @}
   */
