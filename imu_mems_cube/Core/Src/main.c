@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include "motion_mc_cm0p.h"
 #include "motion_mc.h"
+#include <stdbool.h>
+#include <math.h>
 
 /* USER CODE END Includes */
 
@@ -42,6 +44,11 @@
 #define SAMPLE_TIME 100
 #define PI 3.14159265
 #define MAX_BUF_SIZE 200
+
+//#define PRINT_LOGS 1
+//Madgwick
+#define sampleFreq	10.0f		// sample frequency in Hz
+#define betaDef		1.0f		// 2 * proportional gain
 
 /* USER CODE END PD */
 
@@ -66,6 +73,24 @@ char dataOutUART[MAX_BUF_SIZE];
 char lib_version[VERSION_STR_LENG];
 MAC_knobs_t Knobs;
 
+float mag_max[3];
+float mag_min[3];
+float mag_bias[3];
+
+float gyr_bias[3];
+bool areAssignedFirstExtremeValues = false;
+bool isAssignedGyroscopeBias = false;
+uint16_t gyroscopeCounter = 0;
+
+float acc[3];
+float gyr[3];
+float mag[3];
+
+//Madgwick
+float beta = betaDef;								// 2 * proportional gain (Kp)
+float q0 = 1.0f, q1 = 0.0f, q2 = 0.0f, q3 = 0.0f;	// quaternion of sensor frame relative to auxiliary frame
+float roll, pitch, yaw;
+
 
 /* USER CODE END PV */
 
@@ -83,11 +108,19 @@ void Init_MotionMC_Calibration();
 void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
+void CheckMagExtremeValues (float x, float y, float z);
+void CalculateMagBias();
 
 void PrintMEMSValues ( char message[20], float x, float y, float z);
 void PrintMEMSError ( char message[50], int32_t errorNumber);
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
+
+//Madgwick
+float invSqrt(float x);
+void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
+void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az);
+void ToEulerAngles( float q0, float q1, float q2, float q3);
 
 /* USER CODE END PFP */
 
@@ -96,9 +129,33 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if((htim->Instance==TIM7)&&(overflow_flag_tim7)){
 
-//		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
-//		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
-		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
+		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
+//		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+
+		MadgwickAHRSupdateIMU(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2]);
+		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n",
+				q0,q1,q2,q3);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+
+
+
+//		MadgwickAHRSupdate(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2], mag[0], mag[1], mag[2]);
+//		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n",
+//				q0,q1,q2,q3);
+//
+//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
+		/*Yaw, roll, pitch*/
+
+		ToEulerAngles(q0, q1, q2, q3);
+		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f Yaw: %.3f\r\n",
+				pitch*180/PI, roll*180/PI, yaw*180/PI);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
 
 	}
 	return;
@@ -136,7 +193,7 @@ void Read_Accelero_Sensor(uint32_t Instance)
 	IKS01A2_MOTION_SENSOR_Axes_t acceleration;
 
 	int scale = 1000;
-	float acc[3];
+	float acc_raw[3];
 
 
 
@@ -148,69 +205,32 @@ void Read_Accelero_Sensor(uint32_t Instance)
 	}
 	else
 	{
-		acc[0] = acceleration.x;
-		acc[1] = acceleration.y;
-		acc[2] = acceleration.z;
+		acc_raw[0] = acceleration.x;
+		acc_raw[1] = acceleration.y;
+		acc_raw[2] = acceleration.z;
 
 		for (int i = 0; i <3; i++)
 		{
-			acc[i]/=scale;
+			acc_raw[i]/=scale;
 		}
 
-		PrintMEMSValues("Accelerometer", acc[0], acc[1], acc[2]);
+		// Calibration isnt necessary
+		memcpy(acc, acc_raw ,sizeof(acc_raw));
 
-
-
-		uint8_t isCalibrated;
-
-		MAC_input_t input_cal_acc;
-		memcpy(input_cal_acc.Acc, acc,sizeof(acc));
-		memcpy(input_cal_acc.TimeStamp, 1000, sizeof(int));
-
-
-		/*START CALIBRATION*/
-
-		MAC_input_t data_in;
-		MAC_output_t data_out;;
-		float acc_cal_x, acc_cal_y, acc_cal_z;
-		uint8_t is_calibrated;
-
-		data_in.Acc[0]=acc[0];
-		data_in.Acc[1]=acc[1];
-		data_in.Acc[2]=acc[2];
-
-		MotionAC_Update(&data_in, &is_calibrated);
-
-		/* Get Calibration coeficients */
-		MotionAC_GetCalParams(&data_out);
-
-		/* Apply correction */
-//		acc_cal_x = (data_in.Acc[0] - data_out.AccBias[0])* data_out.SF_Matrix[0][0];
-//		acc_cal_y = (data_in.Acc[1] - data_out.AccBias[1])* data_out.SF_Matrix[1][1];
-//		acc_cal_z = (data_in.Acc[2] - data_out.AccBias[2])* data_out.SF_Matrix[2][2];
-
-		acc_cal_x = acc[0];
-		acc_cal_y = acc[1];
-		acc_cal_z = acc[2];
-
-
-		PrintMEMSValues("Calibrated accelerometer", acc_cal_x, acc_cal_y, acc_cal_z);
-
-		PrintMEMSValues("Acc bias", data_out.AccBias[0], data_out.AccBias[1], data_out.AccBias[2]);
-
-		/*Finish calibration*/
+#ifdef PRINT_LOGS
+		PrintMEMSValues("Accelerometer[g]", acc[0], acc[1], acc[2]);
 
 		/*Yaw, roll, pitch*/
 
-		double pitch = 180 * atan (acc_cal_x/sqrt(acc_cal_y*acc_cal_y + acc_cal_z*acc_cal_z))/PI;
-		double roll = 180 * atan (acc_cal_y/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
-		double yaw = 180 * atan (acc_cal_z/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+		double pitch = 180 * atan (acc[0]/sqrt(acc[1]*acc[1]+ acc[2]*acc[2]))/PI;
+		double roll = 180 * atan (acc[1]/sqrt(acc[0]*acc[0] + acc[2]*acc[2]))/PI;
 
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\t Yaw: %.3f\r\n",
-				pitch, roll, yaw);
+		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\r\n",
+				pitch, roll);
 
 		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
+#endif
 
 	}
 
@@ -224,6 +244,7 @@ void Read_Gyro_Sensor(uint32_t Instance)
 	/*ODR = 104 Hz, DPS= 2000  address = 0x6a*/
 
 	IKS01A2_MOTION_SENSOR_Axes_t angular_velocity;
+	float gyr_raw[3];
 
 	if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_GYRO, &angular_velocity))
 	{
@@ -232,7 +253,45 @@ void Read_Gyro_Sensor(uint32_t Instance)
 	}
 	else
 	{
-		PrintMEMSValues("Gyroscope", angular_velocity.x, angular_velocity.y, angular_velocity.z);
+
+		gyr_raw[0] = angular_velocity.x;
+		gyr_raw[1] = angular_velocity.y;
+		gyr_raw[2] = angular_velocity.z;
+
+		#ifdef PRINT_LOGS
+		PrintMEMSValues("Gyrosc_raw[dps]", gyr_raw[0], gyr_raw[1], gyr_raw[2] );
+		#endif
+
+		/*Change dps to mdps*/
+		for ( int i = 0 ; i < 3; i++ )
+		{
+			gyr_raw[i] /= 1000;
+		}
+
+		/*Assign gyroscope bias as a first readed values;*/
+		if(!isAssignedGyroscopeBias)
+		{
+			gyroscopeCounter++;
+			memcpy(gyr_bias, gyr_raw, sizeof(gyr_raw));
+
+			/*There was problem with first readed values, because they were equal 0*/
+			if(gyroscopeCounter >10 )
+			{
+				isAssignedGyroscopeBias = true;
+			}
+		}
+
+		/*Substract bias from raw measure gyroscope value*/
+		for( int i = 0; i < 3; i++ )
+		{
+			gyr_raw[i]-=gyr_bias[i];
+		}
+
+		memcpy(gyr, gyr_raw, sizeof(gyr_raw));
+
+		#ifdef PRINT_LOGS
+		PrintMEMSValues("Gyroscope[dps]", gyr[0], gyr[1], gyr[2] );
+		#endif
 	}
 
 
@@ -253,58 +312,45 @@ void Read_Magneto_Sensor(uint32_t Instance)
 	}
 	else
 	{
-		PrintMEMSValues("Magnetometer", magnetic_field.x, magnetic_field.y, magnetic_field.z);
-	//Data to txt
-	//    snprintf(dataOutUART, MAX_BUF_SIZE, "%d\t%d\t%d\r\n",
-	//             (int)magnetic_field.x, (int)magnetic_field.y, (int)magnetic_field.z);
 
 
-
-		/*Start Calibration*/
-		float mag[3];
-		float mag_cal_x, mag_cal_y, mag_cal_z;
-		MMC_Input_t data_in;
-		MMC_Output_t data_out;
-
-		mag[0] = (float) magnetic_field.x;
-		mag[1] = (float) magnetic_field.y;
-		mag[2] = (float) magnetic_field.z;
+		float mag_raw[3];
+		mag_raw[0] = (float) magnetic_field.x;
+		mag_raw[1] = (float) magnetic_field.y;
+		mag_raw[2] = (float) magnetic_field.z;
+		PrintMEMSValues("Magnetometer_raw[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
 
 
-		memcpy(data_in.Mag, mag,sizeof(mag));
-		data_in.TimeStamp = timestamp*SAMPLE_TIME;
-		MotionMC_Update(&data_in);
-		MotionMC_GetCalParams(&data_out);
-
-		mag_cal_x = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[0][0]
-						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[0][1]
-						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[0][2] );
-
-		mag_cal_y = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[1][0]
-						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[1][1]
-						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[1][2] );
-
-		mag_cal_z = (int) (( data_in.Mag[0] - data_out.HI_Bias[0]) * data_out.SF_Matrix[2][0]
-						+ ( data_in.Mag[1] - data_out.HI_Bias[1]) * data_out.SF_Matrix[2][1]
-						+ ( data_in.Mag[2] - data_out.HI_Bias[2]) * data_out.SF_Matrix[2][2] );
+		/*Custom Calibration Start HERE*/
 
 
-		PrintMEMSValues("CMagnetometer", mag_cal_x, mag_cal_y, mag_cal_z);
+		CheckMagExtremeValues(mag_raw[0], mag_raw[1], mag_raw[2]);
+		CalculateMagBias();
+		PrintMEMSValues("Bias val Mag[mG]", mag_bias[0], mag_bias[1], mag_bias[2]);
 
+		/*Substract bias from value*/
+		for ( int i = 0; i < 3; i++)
+		{
+			mag_raw[i] = mag_raw[i] - mag_bias[i];
+		}
 
+		#ifdef PRINT_LOGS
+		PrintMEMSValues("Magnetometer[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
+		#endif
 
+		/*Convert from mG to uT*/
+		for ( int i = 0; i < 3; i++)
+		{
+			mag_raw[i] /= 10;
+		}
 
-//		double pitch = 180 * atan (acc_cal_x/sqrt(acc_cal_y*acc_cal_y + acc_cal_z*acc_cal_z))/PI;
-//		double roll = 180 * atan (acc_cal_y/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
-//		double yaw = 180 * atan (acc_cal_z/sqrt(acc_cal_x*acc_cal_x + acc_cal_z*acc_cal_z))/PI;
+		memcpy(mag, mag_raw, sizeof(mag_raw));
 
+		#ifdef PRINT_LOGS
+		PrintMEMSValues("Magnetometer[uT]", mag[0], mag[1], mag[2]);
+		#endif
 
-//		float yaw =  atan2(-mag[1],mag[0])*180/PI;
-//
-//		snprintf(dataOutUART, MAX_BUF_SIZE, "Yaw: %.3f\r\n", yaw);
-//
-//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
-
+		/*Custom Calibration End HERE*/
 
 
 	}
@@ -315,6 +361,56 @@ void Read_Magneto_Sensor(uint32_t Instance)
 
 }
 
+void CheckMagExtremeValues (float x, float y, float z)
+{
+	if (!areAssignedFirstExtremeValues)
+	{
+
+		mag_min[0] = x;
+		mag_min[1] = y;
+		mag_min[2] = z;
+
+		mag_max[0] = x;
+		mag_max[1] = y;
+		mag_max[2] = z;
+
+		areAssignedFirstExtremeValues = true;
+	}
+
+	if( x < mag_min[0])
+	{
+		mag_min[0] = x;
+	}
+	if( y < mag_min[1])
+	{
+		mag_min[1] = y;
+	}
+	if( z < mag_min[2])
+	{
+		mag_min[2] = z;
+	}
+
+	if( x > mag_max[0])
+	{
+		mag_max[0] = x;
+	}
+	if( y > mag_max[1])
+	{
+		mag_max[1] = y;
+	}
+	if( z > mag_max[2])
+	{
+		mag_max[2] = z;
+	}
+
+}
+
+void CalculateMagBias()
+{
+	mag_bias[0] = (mag_max[0]+mag_min[0])/2;
+	mag_bias[1] = (mag_max[1]+mag_min[1])/2;
+	mag_bias[2] = (mag_max[2]+mag_min[2])/2;
+}
 void PrintMEMSValues ( char message[50], float x, float y, float z)
 {
 	char dest[MAX_BUF_SIZE];
@@ -338,6 +434,213 @@ void PrintMEMSError ( char message[50], int32_t errorNumber)
 	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
 }
+
+//Madgwick functions
+void MadgwickAHRSupdate(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz)
+{
+	float recipNorm;
+	float s0, s1, s2, s3;
+	float qDot1, qDot2, qDot3, qDot4;
+	float hx, hy;
+	float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
+
+	// Use IMU algorithm if magnetometer measurement invalid (avoids NaN in magnetometer normalisation)
+	if((mx == 0.0f) && (my == 0.0f) && (mz == 0.0f)) {
+		MadgwickAHRSupdateIMU(gx, gy, gz, ax, ay, az);
+		return;
+	}
+
+	// Rate of change of quaternion from gyroscope
+	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
+	qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
+	qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
+	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
+
+	// Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+
+		// Normalise accelerometer measurement
+		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
+
+		// Normalise magnetometer measurement
+		recipNorm = invSqrt(mx * mx + my * my + mz * mz);
+		mx *= recipNorm;
+		my *= recipNorm;
+		mz *= recipNorm;
+
+		// Auxiliary variables to avoid repeated arithmetic
+		_2q0mx = 2.0f * q0 * mx;
+		_2q0my = 2.0f * q0 * my;
+		_2q0mz = 2.0f * q0 * mz;
+		_2q1mx = 2.0f * q1 * mx;
+		_2q0 = 2.0f * q0;
+		_2q1 = 2.0f * q1;
+		_2q2 = 2.0f * q2;
+		_2q3 = 2.0f * q3;
+		_2q0q2 = 2.0f * q0 * q2;
+		_2q2q3 = 2.0f * q2 * q3;
+		q0q0 = q0 * q0;
+		q0q1 = q0 * q1;
+		q0q2 = q0 * q2;
+		q0q3 = q0 * q3;
+		q1q1 = q1 * q1;
+		q1q2 = q1 * q2;
+		q1q3 = q1 * q3;
+		q2q2 = q2 * q2;
+		q2q3 = q2 * q3;
+		q3q3 = q3 * q3;
+
+		// Reference direction of Earth's magnetic field
+		hx = mx * q0q0 - _2q0my * q3 + _2q0mz * q2 + mx * q1q1 + _2q1 * my * q2 + _2q1 * mz * q3 - mx * q2q2 - mx * q3q3;
+		hy = _2q0mx * q3 + my * q0q0 - _2q0mz * q1 + _2q1mx * q2 - my * q1q1 + my * q2q2 + _2q2 * mz * q3 - my * q3q3;
+		_2bx = sqrt(hx * hx + hy * hy);
+		_2bz = -_2q0mx * q2 + _2q0my * q1 + mz * q0q0 + _2q1mx * q3 - mz * q1q1 + _2q2 * my * q3 - mz * q2q2 + mz * q3q3;
+		_4bx = 2.0f * _2bx;
+		_4bz = 2.0f * _2bz;
+
+		// Gradient decent algorithm corrective step
+		s0 = -_2q2 * (2.0f * q1q3 - _2q0q2 - ax) + _2q1 * (2.0f * q0q1 + _2q2q3 - ay) - _2bz * q2 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q3 + _2bz * q1) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q2 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
+		s1 = _2q3 * (2.0f * q1q3 - _2q0q2 - ax) + _2q0 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q1 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + _2bz * q3 * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q2 + _2bz * q0) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q3 - _4bz * q1) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
+		s2 = -_2q0 * (2.0f * q1q3 - _2q0q2 - ax) + _2q3 * (2.0f * q0q1 + _2q2q3 - ay) - 4.0f * q2 * (1 - 2.0f * q1q1 - 2.0f * q2q2 - az) + (-_4bx * q2 - _2bz * q0) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (_2bx * q1 + _2bz * q3) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + (_2bx * q0 - _4bz * q2) * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
+		s3 = _2q1 * (2.0f * q1q3 - _2q0q2 - ax) + _2q2 * (2.0f * q0q1 + _2q2q3 - ay) + (-_4bx * q3 + _2bz * q1) * (_2bx * (0.5f - q2q2 - q3q3) + _2bz * (q1q3 - q0q2) - mx) + (-_2bx * q0 + _2bz * q2) * (_2bx * (q1q2 - q0q3) + _2bz * (q0q1 + q2q3) - my) + _2bx * q1 * (_2bx * (q0q2 + q1q3) + _2bz * (0.5f - q1q1 - q2q2) - mz);
+		recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
+		s0 *= recipNorm;
+		s1 *= recipNorm;
+		s2 *= recipNorm;
+		s3 *= recipNorm;
+
+		// Apply feedback step
+		qDot1 -= beta * s0;
+		qDot2 -= beta * s1;
+		qDot3 -= beta * s2;
+		qDot4 -= beta * s3;
+	}
+
+	// Integrate rate of change of quaternion to yield quaternion
+	q0 += qDot1 * (1.0f / sampleFreq);
+	q1 += qDot2 * (1.0f / sampleFreq);
+	q2 += qDot3 * (1.0f / sampleFreq);
+	q3 += qDot4 * (1.0f / sampleFreq);
+
+	// Normalise quaternion
+	recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
+}
+
+//---------------------------------------------------------------------------------------------------
+// IMU algorithm update
+
+void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az)
+{
+	float recipNorm;
+	float s0, s1, s2, s3;
+	float qDot1, qDot2, qDot3, qDot4;
+	float _2q0, _2q1, _2q2, _2q3, _4q0, _4q1, _4q2 ,_8q1, _8q2, q0q0, q1q1, q2q2, q3q3;
+
+	// Rate of change of quaternion from gyroscope
+	qDot1 = 0.5f * (-q1 * gx - q2 * gy - q3 * gz);
+	qDot2 = 0.5f * (q0 * gx + q2 * gz - q3 * gy);
+	qDot3 = 0.5f * (q0 * gy - q1 * gz + q3 * gx);
+	qDot4 = 0.5f * (q0 * gz + q1 * gy - q2 * gx);
+
+	// Compute feedback only if accelerometer measurement valid (avoids NaN in accelerometer normalisation)
+	if(!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+
+		// Normalise accelerometer measurement
+		recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+		ax *= recipNorm;
+		ay *= recipNorm;
+		az *= recipNorm;
+
+		// Auxiliary variables to avoid repeated arithmetic
+		_2q0 = 2.0f * q0;
+		_2q1 = 2.0f * q1;
+		_2q2 = 2.0f * q2;
+		_2q3 = 2.0f * q3;
+		_4q0 = 4.0f * q0;
+		_4q1 = 4.0f * q1;
+		_4q2 = 4.0f * q2;
+		_8q1 = 8.0f * q1;
+		_8q2 = 8.0f * q2;
+		q0q0 = q0 * q0;
+		q1q1 = q1 * q1;
+		q2q2 = q2 * q2;
+		q3q3 = q3 * q3;
+
+		// Gradient decent algorithm corrective step
+		s0 = _4q0 * q2q2 + _2q2 * ax + _4q0 * q1q1 - _2q1 * ay;
+		s1 = _4q1 * q3q3 - _2q3 * ax + 4.0f * q0q0 * q1 - _2q0 * ay - _4q1 + _8q1 * q1q1 + _8q1 * q2q2 + _4q1 * az;
+		s2 = 4.0f * q0q0 * q2 + _2q0 * ax + _4q2 * q3q3 - _2q3 * ay - _4q2 + _8q2 * q1q1 + _8q2 * q2q2 + _4q2 * az;
+		s3 = 4.0f * q1q1 * q3 - _2q1 * ax + 4.0f * q2q2 * q3 - _2q2 * ay;
+		recipNorm = invSqrt(s0 * s0 + s1 * s1 + s2 * s2 + s3 * s3); // normalise step magnitude
+		s0 *= recipNorm;
+		s1 *= recipNorm;
+		s2 *= recipNorm;
+		s3 *= recipNorm;
+
+		// Apply feedback step
+		qDot1 -= beta * s0;
+		qDot2 -= beta * s1;
+		qDot3 -= beta * s2;
+		qDot4 -= beta * s3;
+	}
+
+	// Integrate rate of change of quaternion to yield quaternion
+	q0 += qDot1 * (1.0f / sampleFreq);
+	q1 += qDot2 * (1.0f / sampleFreq);
+	q2 += qDot3 * (1.0f / sampleFreq);
+	q3 += qDot4 * (1.0f / sampleFreq);
+
+	// Normalise quaternion
+	recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+	q0 *= recipNorm;
+	q1 *= recipNorm;
+	q2 *= recipNorm;
+	q3 *= recipNorm;
+}
+
+
+
+float invSqrt(float x)
+{
+	float halfx = 0.5f * x;
+	float y = x;
+	long i = *(long*)&y;
+	i = 0x5f3759df - (i>>1);
+	y = *(float*)&i;
+	y = y * (1.5f - (halfx * y * y));
+	return y;
+}
+void ToEulerAngles( float q0, float q1, float q2, float q3)
+{
+	float test = q1*q2 + q3*q0;
+	if (test > 0.499 && test < 0.501) { // singularity at north pole
+		yaw = 2 * atan2(q1,q0);
+		pitch = PI/2;
+		roll = 0;
+		return;
+	}
+	if (test < -0.499 && test > -0.501) { // singularity at south pole
+		yaw = -2 * atan2(q1,q0);
+		pitch = - PI/2;
+		roll = 0;
+		return;
+	}
+    float sqx = q1*q1;
+    float sqy = q2*q2;
+    float sqz = q3*q3;
+    yaw = atan2(2*q2*q0-2*q1*q3 , 1 - 2*sqy - 2*sqz);
+	pitch = asin(2*test);
+	roll = atan2(2*q1*q0-2*q2*q3 , 1 - 2*sqx - 2*sqz);
+
+}
+
 
 
 /* USER CODE END 0 */

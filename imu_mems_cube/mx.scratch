@@ -14,41 +14,7 @@
       <ProjectName>imu_mems_cube</ProjectName>
       <ProjectNature>C</ProjectNature>
       <Secure/>
-      <filestoremove>
-        <file>
-          <name>Core\Src\freertos.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\croutine.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\event_groups.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\list.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\queue.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\stream_buffer.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\tasks.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\timers.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS\cmsis_os.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\portable\MemMang\heap_4.c</name>
-        </file>
-        <file>
-          <name>Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM4F\port.c</name>
-        </file>
-      </filestoremove>
+      <filestoremove/>
       <sourceEntriesToRemove>
         <sourceEntry/>
       </sourceEntriesToRemove>
