@@ -45,10 +45,18 @@
 #define PI 3.14159265
 #define MAX_BUF_SIZE 200
 
-//#define PRINT_LOGS 1
+
+// LOGS DEFINES
+//#define PRINT_ACC_LOGS 1
+//#define PRINT_GYRO_RAW_LOGS 1
+//#define PRINT_GYRO_LOGS 1
+//#define PRINT_MAG_mG_LOGS 1
+//#define PRINT_MAG_uT_LOGS
+
+
 //Madgwick
-#define sampleFreq	10.0f		// sample frequency in Hz
-#define betaDef		1.0f		// 2 * proportional gain
+#define sampleFreq	100.0f		// sample frequency in Hz
+#define betaDef		1.0f		// 2 * proportional gain    The best for now is 1.0
 
 /* USER CODE END PD */
 
@@ -67,7 +75,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 extern uint8_t overflow_flag_tim7;
-volatile uint32_t timestamp =0;
+volatile uint32_t timestamp = 0;
 char dataOutUART[MAX_BUF_SIZE];
 
 char lib_version[VERSION_STR_LENG];
@@ -81,6 +89,8 @@ float gyr_bias[3];
 bool areAssignedFirstExtremeValues = false;
 bool isAssignedGyroscopeBias = false;
 uint16_t gyroscopeCounter = 0;
+uint16_t dividerCounter = 0;
+const uint16_t dividerLogs = 1;	//10 Hz printing
 
 float acc[3];
 float gyr[3];
@@ -113,6 +123,8 @@ void CalculateMagBias();
 
 void PrintMEMSValues ( char message[20], float x, float y, float z);
 void PrintMEMSError ( char message[50], int32_t errorNumber);
+void PrintEulerAngles(float roll, float pitch, float yaw);
+void PrintQuaternions();
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
@@ -129,32 +141,25 @@ void ToEulerAngles( float q0, float q1, float q2, float q3);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if((htim->Instance==TIM7)&&(overflow_flag_tim7)){
 
+		dividerCounter ++;
+
 		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
 //		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 
 		MadgwickAHRSupdateIMU(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2]);
-		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n",
-				q0,q1,q2,q3);
-
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
-
-
-
-
 //		MadgwickAHRSupdate(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2], mag[0], mag[1], mag[2]);
-//		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n",
-//				q0,q1,q2,q3);
-//
-//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+
 
 		/*Yaw, roll, pitch*/
 
 		ToEulerAngles(q0, q1, q2, q3);
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f Yaw: %.3f\r\n",
-				pitch*180/PI, roll*180/PI, yaw*180/PI);
 
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+		if(dividerCounter%dividerLogs==0)
+		{
+			PrintEulerAngles(roll*180/PI, pitch*180/PI, yaw*360/PI);
+//			PrintQuaternions();
+		}
 
 
 	}
@@ -217,20 +222,26 @@ void Read_Accelero_Sensor(uint32_t Instance)
 		// Calibration isnt necessary
 		memcpy(acc, acc_raw ,sizeof(acc_raw));
 
-#ifdef PRINT_LOGS
-		PrintMEMSValues("Accelerometer[g]", acc[0], acc[1], acc[2]);
+		#ifdef PRINT_ACC_LOGS
+		if(dividerCounter%dividerLogs==0)
+		{
+			PrintMEMSValues("Accelerometer[g]", acc[0], acc[1], acc[2]);
+		}
+		#endif
 
-		/*Yaw, roll, pitch*/
 
-		double pitch = 180 * atan (acc[0]/sqrt(acc[1]*acc[1]+ acc[2]*acc[2]))/PI;
-		double roll = 180 * atan (acc[1]/sqrt(acc[0]*acc[0] + acc[2]*acc[2]))/PI;
 
-		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\r\n",
-				pitch, roll);
+		/*Calculation of roll, pitch from accelerometer*/
+//
+//		double pitch = 180 * atan (acc[0]/sqrt(acc[1]*acc[1]+ acc[2]*acc[2]))/PI;
+//		double roll = 180 * atan (acc[1]/sqrt(acc[0]*acc[0] + acc[2]*acc[2]))/PI;
+//
+//		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\r\n",
+//				pitch, roll);
+//
+//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
 
-		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
 
-#endif
 
 	}
 
@@ -258,14 +269,18 @@ void Read_Gyro_Sensor(uint32_t Instance)
 		gyr_raw[1] = angular_velocity.y;
 		gyr_raw[2] = angular_velocity.z;
 
-		#ifdef PRINT_LOGS
-		PrintMEMSValues("Gyrosc_raw[dps]", gyr_raw[0], gyr_raw[1], gyr_raw[2] );
+		#ifdef PRINT_GYRO_RAW_LOGS
+		if(dividerCounter%dividerLogs==0)
+		{
+			PrintMEMSValues("Gyrosc_raw[mdps]", gyr_raw[0], gyr_raw[1], gyr_raw[2] );
+		}
 		#endif
 
-		/*Change dps to mdps*/
+		/*Change mdps to dps*/
+		/*There was problem with units!!! I had to divide by 100k, not 1k*/
 		for ( int i = 0 ; i < 3; i++ )
 		{
-			gyr_raw[i] /= 1000;
+			gyr_raw[i] /= 100000;
 		}
 
 		/*Assign gyroscope bias as a first readed values;*/
@@ -289,8 +304,20 @@ void Read_Gyro_Sensor(uint32_t Instance)
 
 		memcpy(gyr, gyr_raw, sizeof(gyr_raw));
 
-		#ifdef PRINT_LOGS
-		PrintMEMSValues("Gyroscope[dps]", gyr[0], gyr[1], gyr[2] );
+		/*Checking if values are near 0 and assign 0*/
+		for ( int i = 0; i < 3; i++ )
+		{
+			if( gyr[i] < 0.1 && gyr[i] > -0.1)
+			{
+				gyr[i] = 0;
+			}
+		}
+
+		#ifdef PRINT_GYRO_LOGS
+		if(dividerCounter%dividerLogs==0)
+		{
+			PrintMEMSValues("Gyroscope[dps]", gyr[0], gyr[1], gyr[2] );
+		}
 		#endif
 	}
 
@@ -334,8 +361,11 @@ void Read_Magneto_Sensor(uint32_t Instance)
 			mag_raw[i] = mag_raw[i] - mag_bias[i];
 		}
 
-		#ifdef PRINT_LOGS
-		PrintMEMSValues("Magnetometer[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
+		#ifdef PRINT_MAG_mG_LOGS
+		if(dividerCounter%dividerLogs==0)
+		{
+			PrintMEMSValues("Magnetometer[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
+		}
 		#endif
 
 		/*Convert from mG to uT*/
@@ -346,8 +376,11 @@ void Read_Magneto_Sensor(uint32_t Instance)
 
 		memcpy(mag, mag_raw, sizeof(mag_raw));
 
-		#ifdef PRINT_LOGS
+		#ifdef PRINT_MAG_uT_LOGS
+		if(dividerCounter%dividerLogs==0)
+		{
 		PrintMEMSValues("Magnetometer[uT]", mag[0], mag[1], mag[2]);
+		}
 		#endif
 
 		/*Custom Calibration End HERE*/
@@ -419,7 +452,7 @@ void PrintMEMSValues ( char message[50], float x, float y, float z)
 	strcat( dest, ": X: %.3f\t Y: %.3f\t Z: %.3f\r\n" );
     snprintf(dataOutUART, MAX_BUF_SIZE, dest, x, y, z);
 
-    HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+    HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
 
 }
 
@@ -431,8 +464,24 @@ void PrintMEMSError ( char message[50], int32_t errorNumber)
 	strcat( dest, ": Error number: %d\r\n");
     snprintf(dataOutUART, MAX_BUF_SIZE, dest, errorNumber);
 
-	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 10);
+	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
 
+}
+
+void PrintEulerAngles(float roll, float pitch, float yaw)
+{
+
+	snprintf(dataOutUART, MAX_BUF_SIZE, "Roll: %.3f\t Pitch: %.3f\t Yaw: %.3f\r\n",roll, pitch, yaw);
+//	snprintf(dataOutUART, MAX_BUF_SIZE, "%.3f\t%.3f\t%.3f\r\n", roll, pitch, yaw);
+
+	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
+}
+
+void PrintQuaternions()
+{
+		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n", q0,q1,q2,q3);
+
+		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
 }
 
 //Madgwick functions
@@ -621,23 +670,27 @@ void ToEulerAngles( float q0, float q1, float q2, float q3)
 {
 	float test = q1*q2 + q3*q0;
 	if (test > 0.499 && test < 0.501) { // singularity at north pole
-		yaw = 2 * atan2(q1,q0);
-		pitch = PI/2;
+
 		roll = 0;
+		pitch = 2 * atan2(q1,q0);
+		yaw = PI/2;
 		return;
 	}
 	if (test < -0.499 && test > -0.501) { // singularity at south pole
-		yaw = -2 * atan2(q1,q0);
-		pitch = - PI/2;
+
 		roll = 0;
+		pitch = -2 * atan2(q1,q0);
+		yaw = - PI/2;
 		return;
 	}
     float sqx = q1*q1;
     float sqy = q2*q2;
     float sqz = q3*q3;
-    yaw = atan2(2*q2*q0-2*q1*q3 , 1 - 2*sqy - 2*sqz);
-	pitch = asin(2*test);
-	roll = atan2(2*q1*q0-2*q2*q3 , 1 - 2*sqx - 2*sqz);
+    roll = atan2(2*q1*q0-2*q2*q3 , 1 - 2*sqx - 2*sqz);
+    pitch = atan2(2*q2*q0-2*q1*q3 , 1 - 2*sqy - 2*sqz);
+    yaw = asin(2*test);
+
+
 
 }
 
@@ -686,7 +739,7 @@ int main(void)
 
 	Init_Motion_Sensors();
 //	MotionMC_Initialize(SAMPLE_TIME, 1);
-	Init_MotionAC_Calibration();
+//	Init_MotionAC_Calibration();
 
 
 	HAL_TIM_Base_Init(&htim7);
@@ -795,7 +848,7 @@ static void MX_TIM7_Init(void)
 
   /* USER CODE END TIM7_Init 1 */
   htim7.Instance = TIM7;
-  htim7.Init.Prescaler = 319;
+  htim7.Init.Prescaler = 31;
   htim7.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim7.Init.Period = 4999;
   htim7.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
