@@ -18,10 +18,10 @@ There was problems with STM32_MotionXC_Libraries. In the end it isn't implemente
 ## Encountered problems
 ### After generating project in CubeMx
 Possible error connecting with "USE_COM_LOG"
- a) Go into custom_conf.h
- b) change define value of USE_COM_LOG to "0U"
- c) Build again.
- d) Now it should work
+1. Go into custom_conf.h
+2. change define value of USE_COM_LOG to "0U"
+3. Build again.
+4. Now it should work
 
 ### Problem with linking library to project
 There was problem with adding STM32_MotionAC_Library, STM32_MotionGC_Library, STM32_MotionMC_Library. Solution:
