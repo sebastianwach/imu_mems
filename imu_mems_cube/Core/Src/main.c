@@ -41,7 +41,7 @@
 /* USER CODE BEGIN PD */
 #define VERSION_STR_LENG 35
 #define REPORT_INTERVAL 20
-#define SAMPLE_TIME 100
+#define SAMPLE_TIME 10
 #define PI 3.14159265
 #define MAX_BUF_SIZE 200
 
@@ -194,7 +194,6 @@ void Init_MotionMC_Calibration()
 void Read_Accelero_Sensor(uint32_t Instance)
 {
 
-	/*ODR = 104 Hz*/
 	IKS01A2_MOTION_SENSOR_Axes_t acceleration;
 
 	int scale = 1000;
@@ -219,7 +218,7 @@ void Read_Accelero_Sensor(uint32_t Instance)
 			acc_raw[i]/=scale;
 		}
 
-		// Calibration isnt necessary
+		/*Calibration isnt necessary, just converted from mg to g*/
 		memcpy(acc, acc_raw ,sizeof(acc_raw));
 
 		#ifdef PRINT_ACC_LOGS
@@ -229,30 +228,11 @@ void Read_Accelero_Sensor(uint32_t Instance)
 		}
 		#endif
 
-
-
-		/*Calculation of roll, pitch from accelerometer*/
-//
-//		double pitch = 180 * atan (acc[0]/sqrt(acc[1]*acc[1]+ acc[2]*acc[2]))/PI;
-//		double roll = 180 * atan (acc[1]/sqrt(acc[0]*acc[0] + acc[2]*acc[2]))/PI;
-//
-//		snprintf(dataOutUART, MAX_BUF_SIZE, "Pitch: %.3f\t Roll: %.3f\r\n",
-//				pitch, roll);
-//
-//		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
-
-
-
 	}
-
-
-
 }
 
 void Read_Gyro_Sensor(uint32_t Instance)
 {
-
-	/*ODR = 104 Hz, DPS= 2000  address = 0x6a*/
 
 	IKS01A2_MOTION_SENSOR_Axes_t angular_velocity;
 	float gyr_raw[3];
@@ -283,7 +263,7 @@ void Read_Gyro_Sensor(uint32_t Instance)
 			gyr_raw[i] /= 100000;
 		}
 
-		/*Assign gyroscope bias as a first readed values;*/
+		/*Assign gyroscope bias as a first proper readed values;*/
 		if(!isAssignedGyroscopeBias)
 		{
 			gyroscopeCounter++;
@@ -320,11 +300,6 @@ void Read_Gyro_Sensor(uint32_t Instance)
 		}
 		#endif
 	}
-
-
-
-
-
 }
 
 void Read_Magneto_Sensor(uint32_t Instance)
@@ -349,8 +324,6 @@ void Read_Magneto_Sensor(uint32_t Instance)
 
 
 		/*Custom Calibration Start HERE*/
-
-
 		CheckMagExtremeValues(mag_raw[0], mag_raw[1], mag_raw[2]);
 		CalculateMagBias();
 		PrintMEMSValues("Bias val Mag[mG]", mag_bias[0], mag_bias[1], mag_bias[2]);
@@ -387,15 +360,12 @@ void Read_Magneto_Sensor(uint32_t Instance)
 
 
 	}
-
-
-
-
-
 }
 
+/*It should be changed to float array*/
 void CheckMagExtremeValues (float x, float y, float z)
 {
+
 	if (!areAssignedFirstExtremeValues)
 	{
 
@@ -472,6 +442,8 @@ void PrintEulerAngles(float roll, float pitch, float yaw)
 {
 
 	snprintf(dataOutUART, MAX_BUF_SIZE, "Roll: %.3f\t Pitch: %.3f\t Yaw: %.3f\r\n",roll, pitch, yaw);
+
+	/*Raw format to csv/txt*/
 //	snprintf(dataOutUART, MAX_BUF_SIZE, "%.3f\t%.3f\t%.3f\r\n", roll, pitch, yaw);
 
 	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
