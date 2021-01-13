@@ -78,7 +78,6 @@ extern uint8_t overflow_flag_tim7;
 volatile uint32_t timestamp = 0;
 char dataOutUART[MAX_BUF_SIZE];
 
-char lib_version[VERSION_STR_LENG];
 MAC_knobs_t Knobs;
 
 float mag_max[3];
@@ -89,8 +88,8 @@ float gyr_bias[3];
 bool areAssignedFirstExtremeValues = false;
 bool isAssignedGyroscopeBias = false;
 uint16_t gyroscopeCounter = 0;
-uint16_t dividerCounter = 0;
-const uint16_t dividerLogs = 1;	//10 Hz printing
+uint16_t logCounter = 0;
+const uint16_t dividerLogs = 5;	//20 Hz printing
 
 float acc[3];
 float gyr[3];
@@ -125,6 +124,7 @@ void PrintMEMSValues ( char message[20], float x, float y, float z);
 void PrintMEMSError ( char message[50], int32_t errorNumber);
 void PrintEulerAngles(float roll, float pitch, float yaw);
 void PrintQuaternions();
+void PrintToPyTeapot(float qw, float qa, float qb, float qc, float yaw, float pitch, float roll);
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim);
 
@@ -141,7 +141,7 @@ void ToEulerAngles( float q0, float q1, float q2, float q3);
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if((htim->Instance==TIM7)&&(overflow_flag_tim7)){
 
-		dividerCounter ++;
+		logCounter ++;
 
 		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
@@ -150,14 +150,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		MadgwickAHRSupdateIMU(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2]);
 //		MadgwickAHRSupdate(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2], mag[0], mag[1], mag[2]);
 
-
-		/*Yaw, roll, pitch*/
-
 		ToEulerAngles(q0, q1, q2, q3);
 
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
-			PrintEulerAngles(roll*180/PI, pitch*180/PI, yaw*360/PI);
+			PrintToPyTeapot(q0, q1,q2,q3, yaw, pitch, roll);
+//			PrintEulerAngles(roll*180/PI, pitch*180/PI, yaw*360/PI);
 //			PrintQuaternions();
 		}
 
@@ -222,7 +220,7 @@ void Read_Accelero_Sensor(uint32_t Instance)
 		memcpy(acc, acc_raw ,sizeof(acc_raw));
 
 		#ifdef PRINT_ACC_LOGS
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
 			PrintMEMSValues("Accelerometer[g]", acc[0], acc[1], acc[2]);
 		}
@@ -250,7 +248,7 @@ void Read_Gyro_Sensor(uint32_t Instance)
 		gyr_raw[2] = angular_velocity.z;
 
 		#ifdef PRINT_GYRO_RAW_LOGS
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
 			PrintMEMSValues("Gyrosc_raw[mdps]", gyr_raw[0], gyr_raw[1], gyr_raw[2] );
 		}
@@ -294,7 +292,7 @@ void Read_Gyro_Sensor(uint32_t Instance)
 		}
 
 		#ifdef PRINT_GYRO_LOGS
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
 			PrintMEMSValues("Gyroscope[dps]", gyr[0], gyr[1], gyr[2] );
 		}
@@ -335,7 +333,7 @@ void Read_Magneto_Sensor(uint32_t Instance)
 		}
 
 		#ifdef PRINT_MAG_mG_LOGS
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
 			PrintMEMSValues("Magnetometer[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
 		}
@@ -350,7 +348,7 @@ void Read_Magneto_Sensor(uint32_t Instance)
 		memcpy(mag, mag_raw, sizeof(mag_raw));
 
 		#ifdef PRINT_MAG_uT_LOGS
-		if(dividerCounter%dividerLogs==0)
+		if(logCounter%dividerLogs==0)
 		{
 		PrintMEMSValues("Magnetometer[uT]", mag[0], mag[1], mag[2]);
 		}
@@ -454,6 +452,14 @@ void PrintQuaternions()
 		snprintf(dataOutUART, MAX_BUF_SIZE, "q0: %.3f\t q1: %.3f q2: %.3f q3: %.3f\r\n", q0,q1,q2,q3);
 
 		HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
+}
+
+void PrintToPyTeapot(float qw, float qa, float qb, float qc, float yaw, float pitch, float roll  )
+{
+
+	snprintf(dataOutUART, MAX_BUF_SIZE, "w%.3fwa%.3fab%.3fbc%.3fcy%.3fyp%.3fpr%.3fr\r\n",qw,qa,qb,qc,yaw,pitch,roll);
+
+	HAL_UART_Transmit(&huart2, dataOutUART, strlen(dataOutUART), 1);
 }
 
 //Madgwick functions
@@ -661,6 +667,17 @@ void ToEulerAngles( float q0, float q1, float q2, float q3)
     roll = atan2(2*q1*q0-2*q2*q3 , 1 - 2*sqx - 2*sqz);
     pitch = atan2(2*q2*q0-2*q1*q3 , 1 - 2*sqy - 2*sqz);
     yaw = asin(2*test);
+
+    // Multiplying to print in degrees
+
+    roll*=180/PI;
+    pitch*= 180/PI;
+    yaw*= 360/PI;
+
+
+    //Reverse pitch to visualise better cuboid
+    pitch*=-1;
+
 
 
 

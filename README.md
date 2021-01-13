@@ -14,6 +14,10 @@ Whole project is done in STM32CubeIDE. All I/O ports, timers, connectivity, libr
 From STM X-CUBE-MEMS1 library for IKS01A2 was used.
 There was problems with STM32_MotionXC_Libraries. In the end it isn't implemented in project.
 
+## Visulisation 
+
+https://github.com/thecountoftuscany/PyTeapot-Quaternion-Euler-cube-rotation
+
 
 ## Encountered problems
 ### After generating project in CubeMx
