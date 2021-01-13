@@ -39,7 +39,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define VERSION_STR_LENG 35
 #define REPORT_INTERVAL 20
 #define SAMPLE_TIME 10
 #define PI 3.14159265
@@ -77,7 +76,6 @@ UART_HandleTypeDef huart2;
 extern uint8_t overflow_flag_tim7;
 volatile uint32_t timestamp = 0;
 char dataOutUART[MAX_BUF_SIZE];
-
 MAC_knobs_t Knobs;
 
 float mag_max[3];
@@ -117,7 +115,7 @@ void Init_MotionMC_Calibration();
 void Read_Accelero_Sensor(uint32_t Instance);
 void Read_Gyro_Sensor(uint32_t Instance);
 void Read_Magneto_Sensor(uint32_t Instance);
-void CheckMagExtremeValues (float x, float y, float z);
+void CheckMagExtremeValues (float mag_raw[3]);
 void CalculateMagBias();
 
 void PrintMEMSValues ( char message[20], float x, float y, float z);
@@ -145,7 +143,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 		Read_Accelero_Sensor(IKS01A2_LSM6DSL_0);
 		Read_Gyro_Sensor(IKS01A2_LSM6DSL_0);
-//		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
+		Read_Magneto_Sensor(IKS01A2_LSM303AGR_MAG_0);
 
 		MadgwickAHRSupdateIMU(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2]);
 //		MadgwickAHRSupdate(gyr[0], gyr[1], gyr[2], acc[0],acc[1], acc[2], mag[0], mag[1], mag[2]);
@@ -196,8 +194,6 @@ void Read_Accelero_Sensor(uint32_t Instance)
 
 	int scale = 1000;
 	float acc_raw[3];
-
-
 
 	if (IKS01A2_MOTION_SENSOR_GetAxes(Instance, MOTION_ACCELERO, &acceleration))
 	{
@@ -318,13 +314,13 @@ void Read_Magneto_Sensor(uint32_t Instance)
 		mag_raw[0] = (float) magnetic_field.x;
 		mag_raw[1] = (float) magnetic_field.y;
 		mag_raw[2] = (float) magnetic_field.z;
-		PrintMEMSValues("Magnetometer_raw[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
+//		PrintMEMSValues("Magnetometer_raw[mG]", mag_raw[0], mag_raw[1], mag_raw[2]);
 
 
 		/*Custom Calibration Start HERE*/
-		CheckMagExtremeValues(mag_raw[0], mag_raw[1], mag_raw[2]);
+		CheckMagExtremeValues(mag_raw);
 		CalculateMagBias();
-		PrintMEMSValues("Bias val Mag[mG]", mag_bias[0], mag_bias[1], mag_bias[2]);
+//		PrintMEMSValues("Bias val Mag[mG]", mag_bias[0], mag_bias[1], mag_bias[2]);
 
 		/*Substract bias from value*/
 		for ( int i = 0; i < 3; i++)
@@ -360,57 +356,40 @@ void Read_Magneto_Sensor(uint32_t Instance)
 	}
 }
 
-/*It should be changed to float array*/
-void CheckMagExtremeValues (float x, float y, float z)
+void CheckMagExtremeValues (float mag_raw[3])
 {
 
 	if (!areAssignedFirstExtremeValues)
 	{
-
-		mag_min[0] = x;
-		mag_min[1] = y;
-		mag_min[2] = z;
-
-		mag_max[0] = x;
-		mag_max[1] = y;
-		mag_max[2] = z;
+		memcpy(mag_min, mag_raw, sizeof(mag_raw));
+		memcpy(mag_max, mag_raw, sizeof(mag_raw));
 
 		areAssignedFirstExtremeValues = true;
 	}
 
-	if( x < mag_min[0])
+	for( uint8_t i = 0; i< 3; i++)
 	{
-		mag_min[0] = x;
-	}
-	if( y < mag_min[1])
-	{
-		mag_min[1] = y;
-	}
-	if( z < mag_min[2])
-	{
-		mag_min[2] = z;
+		if( mag_raw[i] < mag_min[i])
+		{
+			mag_min[i] = mag_raw[i];
+		}
 	}
 
-	if( x > mag_max[0])
+	for( uint8_t i = 0; i< 3; i++)
 	{
-		mag_max[0] = x;
+		if( mag_raw[i] > mag_max[i])
+		{
+			mag_max[i] = mag_raw[i];
+		}
 	}
-	if( y > mag_max[1])
-	{
-		mag_max[1] = y;
-	}
-	if( z > mag_max[2])
-	{
-		mag_max[2] = z;
-	}
-
 }
 
 void CalculateMagBias()
 {
-	mag_bias[0] = (mag_max[0]+mag_min[0])/2;
-	mag_bias[1] = (mag_max[1]+mag_min[1])/2;
-	mag_bias[2] = (mag_max[2]+mag_min[2])/2;
+	for( uint8_t i = 0; i <3; i++)
+	{
+		mag_bias[i] = (mag_max[i]+mag_min[i])/2;
+	}
 }
 void PrintMEMSValues ( char message[50], float x, float y, float z)
 {
@@ -677,9 +656,6 @@ void ToEulerAngles( float q0, float q1, float q2, float q3)
 
     //Reverse pitch to visualise better cuboid
     pitch*=-1;
-
-
-
 
 }
 
